@@ -5,13 +5,13 @@ BEGIN { use_ok('Net::Address::Ethernet', qw( :all ), ) };
 
 SKIP:
   {
-  skip 'This is not Solaris', 4 if ($^O !~ m!solaris!i);
+  skip 'This is not MacOS', 4 if ($^O !~ m!darwin!i);
   my $s = get_address;
   ok(defined($s));
   isnt($s, '');
   diag(qq{FYI, your ethernet address is $s});
   my $sMethod = method;
-  like($sMethod, qr{arp|ifconfig});
+  is($sMethod, 'ifconfig');
   my @a = get_address;
   diag(qq{in integer bytes, that's }. join(',', @a));
   is(scalar(@a), 6);

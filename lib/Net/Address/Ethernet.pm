@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.61 2004/02/10 01:52:26 Daddy Exp $
+# $Id: Ethernet.pm,v 1.62 2004/07/14 12:46:48 Daddy Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ use constant DEBUG_SOLARIS => 0;
 
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 @ISA = qw( Exporter );
-$VERSION = do { my @r = (q$Revision: 1.61 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.62 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 %EXPORT_TAGS = ( 'all' => [ qw( get_address method canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -107,8 +107,8 @@ sub get_address
         DEBUG_LINUX && print STDERR " + line of arp ==$sLine==\n";
         if ($sLine =~ m!\sETHER\s+((?:$b$b:){5}$b$b)\s!i)
           {
-          $sMethod = 'arp';
           $sAddr = $1;
+          $sMethod = 'arp';
           goto ALL_DONE;
           } # if
         } # foreach
@@ -124,8 +124,8 @@ sub get_address
         DEBUG_LINUX && print STDERR " + line of ifconfig ==$sLine==\n";
         if ($sLine =~ m!\bETHERNET\s+HWADDR\s+((?:$b$b:){5}$b$b)\b!i)
           {
-          $sMethod = 'ifconfig';
           $sAddr = $1;
+          $sMethod = 'ifconfig';
           goto ALL_DONE;
           } # if
         } # foreach
@@ -145,8 +145,8 @@ sub get_address
         DEBUG_SOLARIS && print STDERR " + line of arp ==$sLine==\n";
         if ($sLine =~ m!\sAT\s+((?:$b$b?:){5}$b$b?)\s!i)
           {
-          $sMethod = 'arp';
           $sAddr = $1;
+          $sMethod = 'arp';
           goto ALL_DONE;
           } # if
         } # foreach
@@ -162,13 +162,27 @@ sub get_address
         DEBUG_SOLARIS && print STDERR " + line of ifconfig ==$sLine==\n";
         if ($sLine =~ m!\bETHER\s+((?:$b$b?:){5}$b$b?)\b!i)
           {
-          $sMethod = 'ifconfig';
           $sAddr = $1;
+          $sMethod = 'ifconfig';
           goto ALL_DONE;
           } # if
         } # foreach
       } # if
     }
+  elsif ($^O =~ m!darwin!i)
+    {
+    my @as = qx{ ifconfig };
+ LINE_IFCONFIG_DARWIN:
+    foreach my $sLine (@as)
+      {
+      if($sLine =~ m!\sETHER\s+((?:$b$b:){5}$b$b)\s!i)
+        {
+        $sAddr = $1;
+        $sMethod = 'ifconfig';
+        goto ALL_DONE;
+        } # if
+      } # foreach
+    } # if MACINTOSH
   else
     {
     # Unknown operating system

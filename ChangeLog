@@ -1,3 +1,7 @@
+2004-07-14  Kingpin  <mthurn@verizon.net>
+
+	* lib/Net/Address/Ethernet.pm (get_address): MacOS support added by Brian Hayward
+
 2004-02-09  Kingpin  <mthurn@verizon.net>
 
 	* lib/Net/Address/Ethernet.pm (get_address): fix linux command locations
