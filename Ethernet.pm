@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.3 2003-11-29 14:57:43-05 kingpin Exp kingpin $
+# $Id: Ethernet.pm,v 1.4 2003-12-12 08:05:40-05 kingpin Exp kingpin $
 
 =head1 NAME
 
@@ -11,7 +11,7 @@ Net::Address::Ethernet - find hardware ethernet address
   my $sAddress = get_address;
   my $sMethod = &Net::Address::Ethernet::method;
 
-=head1 DESCRIPTION
+=head1 FUNCTIONS
 
 The following functions will be exported to your namespace if you request :all like so:
 
@@ -19,17 +19,26 @@ The following functions will be exported to your namespace if you request :all l
 
 =over
 
+=item canonical
+
+Given a 6-byte ethernet address, converts it to canonical form.
+Canonical form is 2-digit uppercase hexadecimal numbers with colon
+between the bytes.  The address to be converted can have any kind of
+punctuation between the bytes, the bytes can be 1-digit, and the bytes
+can be lowercase; but the bytes must already be hex.
+
 =item get_address
 
-Returns the 6-byte ethernet address in hexadecimal format with colon
-between the bytes.  For example, '1a:2b:3c:4d:5e:6f'.  No other
-reformatting is done, so the hex digits can be capital or lowercase;
-and each hex byte could be one or two digits.  For example,
-'0:3:A:2B:3C:4D'.
+Returns the 6-byte ethernet address in canonical form.
+For example, '1A:2B:3C:4D:5E:6F'.
 
 When called in array context, returns a 6-element list representing
 the 6 bytes of the address in decimal.  For example,
 (26,43,60,77,94,111).
+
+=item is_address
+
+Returns a true value if its argument is an ethernet address.
 
 =item method
 
@@ -70,9 +79,9 @@ use strict;
 
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 @ISA = qw( Exporter );
-$VERSION = sprintf("%d.%02d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/o);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/o);
 
-%EXPORT_TAGS = ( 'all' => [ qw( get_address method ), ], );
+%EXPORT_TAGS = ( 'all' => [ qw( get_address method canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 @EXPORT = qw( );
 
@@ -102,8 +111,6 @@ sub get_address
           {
           # Matched the 6-byte ethernet address:
           $sAddr = $1;
-          # Make it conform to our output spec:
-          $sAddr =~ tr!-!:!;
           # Don't return it until we make sure this adapter is active!
           } # found the ethernet address
         } # found "Physical Address"
@@ -161,8 +168,31 @@ sub get_address
     {
     # Unknown operating system
     }
-  return wantarray ? map { hex } split(':', $sAddr) : $sAddr;
+  return wantarray ? map { hex } split(/[-:]/, $sAddr) : &canonical($sAddr);
   } # get_address
+
+sub is_address
+  {
+  my $s = shift || '';
+  # Convert all non-hex digits to colon:
+  $s =~ s![^0-9a-fA-F]+!:!g;
+  $s .= ':';
+  return ($s =~ m!\A([0-9a-f]{1,2}:){6}\Z!i);
+  } # is_address
+
+sub canonical
+  {
+  my $s = shift;
+  return '' if ! &is_address($s);
+  # Convert all non-hex digits to colon:
+  $s =~ s![^0-9a-fA-F]+!:!g;
+  my @as = split(':', $s);
+  # Cobble together 2-digit hex bytes:
+  $s = '';
+  map { $s .= length() < 2 ? "0$_" : $_; $s .= ':' } @as;
+  chop $s;
+  return uc $s;
+  } # canonical
 
 1;
 

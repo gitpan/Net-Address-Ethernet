@@ -2,9 +2,9 @@ Net::Address::Ethernet
 ======================
 
 Finds the hardware ethernet address of the local machine.  
-The ethernet address is a 6-byte value that is usually reported as 
+The ethernet address is a 6-byte value that is formatted as 
 hex digits with colon between.  
-For example, 00:03:2a:47:65:ee
+For example, 00:03:2A:47:65:EE
 
 
 INSTALLATION

@@ -1,3 +1,8 @@
+2003-12-12  Kingpin  <mthurn@verizon.net>
+
+	* Ethernet.pm (is_address): new function
+	(canonical): new function
+
 2003-11-29  Kingpin  <mthurn@verizon.net>
 
 	* Ethernet.pm (get_address): new array-context return value
