@@ -5,7 +5,7 @@ BEGIN { use_ok('Net::Address::Ethernet', qw( :all ), ) };
 
 SKIP:
   {
-  skip 'This is not linux', 3 if ($^O !~ m!linux!i);
+  skip 'This is not linux', 4 if ($^O !~ m!linux!i);
   my $s = get_address;
   ok(defined($s));
   # Hex digit fragment of a qr{}:
@@ -14,4 +14,7 @@ SKIP:
   diag(qq{FYI, your ethernet address is $s});
   my $sMethod = method;
   is($sMethod, 'arp');
+  my @a = get_address;
+  diag(qq{in integer bytes, that's }. join(',', @a));
+  is(scalar(@a), 6);
   } # end of SKIP block
