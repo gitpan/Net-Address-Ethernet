@@ -11,7 +11,7 @@ SKIP:
   isnt($s, '');
   diag(qq{FYI, your ethernet address is $s});
   my $sMethod = method;
-  is($sMethod, 'arp');
+  like($sMethod, qr{arp|ifconfig});
   my @a = get_address;
   diag(qq{in integer bytes, that's }. join(',', @a));
   is(scalar(@a), 6);

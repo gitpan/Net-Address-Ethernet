@@ -1,15 +1,12 @@
 ChangeLog
-Ethernet.pm
 inc/Module/Install.pm
 inc/Module/Install/Base.pm
 inc/Module/Install/Can.pm
 inc/Module/Install/Fetch.pm
-inc/Module/Install/Include.pm
 inc/Module/Install/Makefile.pm
 inc/Module/Install/Metadata.pm
 inc/Module/Install/Win32.pm
-inc/Test/Builder.pm
-inc/Test/More.pm
+lib/Net/Address/Ethernet.pm
 Makefile.PL
 MANIFEST			This list of files
 README
@@ -18,5 +15,6 @@ t/import_all.t
 t/import_ga.t
 t/import_m.t
 t/linux.t
+t/pod.t
 t/solaris.t
 t/win32.t

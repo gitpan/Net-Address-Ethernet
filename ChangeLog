@@ -1,3 +1,15 @@
+2004-02-09  Kingpin  <mthurn@verizon.net>
+
+	* lib/Net/Address/Ethernet.pm (get_address): fix linux command locations
+
+2004-02-05  Kingpin  <mthurn@verizon.net>
+
+	* lib/Net/Address/Ethernet.pm (get_address): do not execute if program doesn't exist
+
+2004-02-04  Kingpin  <mthurn@verizon.net>
+
+	* lib/Net/Address/Ethernet.pm (get_address): if arp fails on solaris, try ifconfig
+
 2004-01-22  Kingpin  <mthurn@verizon.net>
 
 	* Ethernet.pm (get_address): if arp fails on linux, try ifconfig
