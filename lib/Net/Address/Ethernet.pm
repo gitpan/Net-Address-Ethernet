@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.62 2004/07/14 12:46:48 Daddy Exp $
+# $Id: Ethernet.pm,v 1.63 2004/11/10 22:22:44 Daddy Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ use constant DEBUG_SOLARIS => 0;
 
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 @ISA = qw( Exporter );
-$VERSION = do { my @r = (q$Revision: 1.62 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.63 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 %EXPORT_TAGS = ( 'all' => [ qw( get_address method canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -60,6 +60,7 @@ sub get_address
   $sMethod = 'failed';
   if ($^O =~ m!Win32!i)
     {
+    my @asAddr;
     my @as = qx{ ipconfig /all };
  LINE_IPCONFIG:
     foreach my $sLine (@as)
@@ -71,6 +72,7 @@ sub get_address
           {
           # Matched the 6-byte ethernet address:
           $sAddr = $1;
+          push @asAddr, $sAddr;
           # Don't return it until we make sure this adapter is active!
           } # found the ethernet address
         } # found "Physical Address"
@@ -92,6 +94,13 @@ sub get_address
           } # we've already seen the physical address
         } # found a non-zero IP address
       } # foreach LINE_IPCONFIG
+    # If we get here, then no adapters were active.
+    if (scalar(@asAddr) == 1)
+      {
+      # There was only one MAC address found; return it even though it
+      # is not active:
+      $sAddr = shift @asAddr;
+      }
     } # if Win32
   elsif ($^O =~ m!linux!i)
     {

@@ -1,3 +1,7 @@
+2004-11-10  Kingpin  <mthurn@verizon.net>
+
+	* lib/Net/Address/Ethernet.pm (get_address): on Win32, if no adapter is active and one address found, return that address
+
 2004-07-14  Kingpin  <mthurn@verizon.net>
 
 	* lib/Net/Address/Ethernet.pm (get_address): MacOS support added by Brian Hayward
