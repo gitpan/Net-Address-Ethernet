@@ -7,6 +7,7 @@ version_from('Ethernet.pm');
 author('Martin Thurn <mthurn@cpan.org>');
 license('perl');
 
+requires( perl => 5.004 );
 requires('Sys::Hostname');
 
 # Test::More is needed for `make test`:

@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.4 2003-12-12 08:05:40-05 kingpin Exp kingpin $
+# $Id: Ethernet.pm,v 1.6 2004/01/23 02:23:01 Daddy Exp $
 
 =head1 NAME
 
@@ -77,9 +77,11 @@ use Sys::Hostname;
 
 use strict;
 
+use constant DEBUG_LINUX => 0;
+
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 @ISA = qw( Exporter );
-$VERSION = sprintf("%d.%02d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/o);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.6 $ =~ /(\d+)\.(\d+)/o);
 
 %EXPORT_TAGS = ( 'all' => [ qw( get_address method canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -136,14 +138,29 @@ sub get_address
   elsif ($^O =~ m!linux!i)
     {
     my @as = qx{ /sbin/arp };
+    # chomp @as;
  LINE_ARP_LINUX:
     foreach my $sLine (@as)
       {
+      DEBUG_LINUX && print STDERR " + line of arp ==$sLine==\n";
       if ($sLine =~ m!\sETHER\s+((?:$b$b:){5}$b$b)\s!i)
         {
         $sMethod = 'arp';
         $sAddr = $1;
         last LINE_ARP_LINUX;
+        } # if
+      } # foreach
+    # If we get here, then /sbin/arp FAILED.  Try ipconfig:
+    @as = qx{ /sbin/ifconfig };
+ LINE_IFCONFIG_LINUX:
+    foreach my $sLine (@as)
+      {
+      DEBUG_LINUX && print STDERR " + line of ifconfig ==$sLine==\n";
+      if ($sLine =~ m!\bETHERNET\s+HWADDR\s+((?:$b$b:){5}$b$b)\b!i)
+        {
+        $sMethod = 'ifconfig';
+        $sAddr = $1;
+        last LINE_IFCONFIG_LINUX;
         } # if
       } # foreach
     }
