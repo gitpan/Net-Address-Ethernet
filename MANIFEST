@@ -16,6 +16,6 @@ t/import_all.t
 t/import_ga.t
 t/import_m.t
 t/linux.t
+t/MSWin32.t
 t/pod.t
 t/solaris.t
-t/win32.t

@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.63 2004/11/10 22:22:44 Daddy Exp $
+# $Id: Ethernet.pm,v 1.64 2004/11/13 14:00:50 Daddy Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ use constant DEBUG_SOLARIS => 0;
 
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 @ISA = qw( Exporter );
-$VERSION = do { my @r = (q$Revision: 1.63 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.64 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 %EXPORT_TAGS = ( 'all' => [ qw( get_address method canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -65,7 +65,11 @@ sub get_address
  LINE_IPCONFIG:
     foreach my $sLine (@as)
       {
-      if ($sLine =~ m!Physical\s+Address!i)
+      if ($sLine =~ m{(
+                       Physical\s+Address     # English
+                      |
+                       Physikalische\s+Adresse  # German
+                      )}ix)
         {
         # Found a Physical Address line.
         if ($sLine =~ m!((?:$b$b-){5}$b$b)!)
@@ -78,7 +82,11 @@ sub get_address
         } # found "Physical Address"
       elsif (
              # This adapter shows a real IP address:
-             ($sLine =~ m!\sIP\s+ADDRESS!i)
+             ($sLine =~ m{\s(
+                          IP\s+ADDRESS   # English
+                          |
+                          IP-Adresse     # German
+                          )}ix)
              &&
              ($sLine =~ m!\s\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}!i)
              &&

@@ -19,16 +19,13 @@ ok(is_address('1:22:3:a:Bb:C'));
 ok(is_address('01:20:03:0a:0b:0c'));
 ok(is_address('11:22:33:aa:bb:cc'));
 ok(is_address('11:22:33:AA:BB:CC'));
-ok(is_address('11:22:33:A:BB:C'));
+ok(is_address('11,22.33 A/BB;C'));
 is(canonical(undef), '');
 is(canonical(''), '');
 is(canonical('not a number'), '');
 is(canonical('1:2:3:a:B:c'), '01:02:03:0A:0B:0C');
 is(canonical('1:22:3:a:bb:c'), '01:22:03:0A:BB:0C');
 is(canonical('11:22:33:aa:Bb:CC'), '11:22:33:AA:BB:CC');
-
-# Platform-independent tests of real address of local machine:
-my $s = get_address;
-ok(defined($s));
-ok(is_address($s));
-is($s, canonical($s));
+is(canonical('1-2-3-a-B-c'), '01:02:03:0A:0B:0C');
+is(canonical('1 22 3 a bb c'), '01:22:03:0A:BB:0C');
+is(canonical('11;22,3 aa.Bb/CC'), '11:22:03:AA:BB:CC');

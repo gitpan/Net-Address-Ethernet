@@ -9,6 +9,8 @@ SKIP:
   my $s = get_address;
   ok(defined($s));
   isnt($s, '');
+  ok(is_address($s));
+  is($s, canonical($s));
   diag(qq{FYI, your ethernet address is $s});
   my $sMethod = method;
   like($sMethod, qr{arp|ifconfig});
