@@ -1,0 +1,16 @@
+name: Net-Address-Ethernet
+version: 1.072
+author: Martin Thurn <mthurn@cpan.org>
+license: perl
+distribution_type: module
+build_requires:
+  Test::More: 0
+  Test::Pod: 0
+requires:
+  perl: 5.004
+  Regexp::Common: 0
+  Sys::Hostname: 0
+no_index:
+  directory:
+    - inc
+generated_by: Module::Install version 0.37

@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.69 2005/08/03 21:18:42 Daddy Exp $
+# $Id: Ethernet.pm,v 1.72 2005/09/23 20:35:37 Daddy Exp $
 
 =head1 NAME
 
@@ -29,13 +29,13 @@ use Sys::Hostname;
 
 use strict;
 
-use constant DEBUG_LINUX => 1;
-use constant DEBUG_SOLARIS => 1;
+use constant DEBUG_LINUX => 0;
+use constant DEBUG_SOLARIS => 0;
 use constant DEBUG_IPCONFIG => 0;
 
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 @ISA = qw( Exporter );
-$VERSION = do { my @r = (q$Revision: 1.69 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.72 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 %EXPORT_TAGS = ( 'all' => [ qw( get_address method canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -234,11 +234,11 @@ sub get_address
 =item method
 
 After a successful call to get_address(), the method() function will
-tell you how the information was derived.  Currently there are two
-possibilities: 'arp' for Unix-like systems, or 'ipconfig' for Win32.
-If you haven't called get_address(), 'N/A' will be returned.  If
-something went wrong during get_address, 'failed' will be returned by
-method().
+tell you how the information was derived.  Currently there are three
+possibilities: 'arp' or 'ifconfig' for Unix-like systems, or
+'ipconfig' for Win32.  If you haven't called get_address(), 'N/A' will
+be returned.  If something went wrong during get_address(), 'failed'
+will be returned by method().
 
 =cut
 
@@ -250,7 +250,7 @@ sub method
 
 =item is_address
 
-Returns a true value if its argument is an ethernet address.
+Returns a true value if its argument looks like an ethernet address.
 
 =cut
 
@@ -294,12 +294,12 @@ sub canonical
 
 =head1 SEE ALSO
 
-ipconfig, arp
+arp, ifconfig, ipconfig
 
 =head1 BUGS
 
 Please tell the author if you find any!  And please show me the output
-format of `ipconfig /all` or `arp` from your system.
+format of `ipconfig /all` or `arp <hostname>` or `ifconfig` from your system.
 
 =head1 AUTHOR
 

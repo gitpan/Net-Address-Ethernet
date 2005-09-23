@@ -15,7 +15,7 @@ build_requires('Test::More');
 build_requires('Test::Pod');
 
 check_nmake();      # check and download nmake.exe for Win32
-&Makefile->write;
+&WriteAll;
 
 __END__
 

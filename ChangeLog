@@ -1,3 +1,8 @@
+2005-09-23    <Daddy@C-3PO>
+
+	* lib/Net/Address/Ethernet.pm: turn off debugging!
+	(method): update pod
+
 2005-08-03    <Daddy@C-3PO>
 
 	* lib/Net/Address/Ethernet.pm: now uses Regexp::Common
