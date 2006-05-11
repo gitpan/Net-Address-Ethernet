@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.72 2005/09/23 20:35:37 Daddy Exp $
+# $Id: Ethernet.pm,v 1.73 2006/05/11 00:16:37 Daddy Exp $
 
 =head1 NAME
 
@@ -23,6 +23,7 @@ The following functions will be exported to your namespace if you request :all l
 
 package Net::Address::Ethernet;
 
+use Data::Dumper; # for debugging only
 use Exporter;
 use Regexp::Common;
 use Sys::Hostname;
@@ -35,7 +36,7 @@ use constant DEBUG_IPCONFIG => 0;
 
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 @ISA = qw( Exporter );
-$VERSION = do { my @r = (q$Revision: 1.72 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.73 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 %EXPORT_TAGS = ( 'all' => [ qw( get_address method canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -57,8 +58,6 @@ the 6 bytes of the address in decimal.  For example,
 sub get_address
   {
   my $sAddr;
-  # Hex digit fragment of a qr{}:
-  my $b = '[0-9a-fA-F]';
   $sMethod = 'failed';
   if ($^O =~ m!Win32!i)
     {
@@ -68,60 +67,54 @@ sub get_address
     foreach my $sLine (@as)
       {
       $sLine =~ s!\s+\Z!!;
-      if ($sLine =~ m{(
-                       Physical\s+Address     # English
-                      |
-                       Physikalische\s+Adresse  # German
-                      |
-                       Adresse\s+physique   # French
-                      )}ix)
+      print STDERR " DDD line ==$sLine==\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
+      # print STDERR " DDD   re=$RE{net}{MAC}{hex}{-sep=>qr/-/}=\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
+      if ($sLine =~ m!\s\.\s:\s$RE{net}{MAC}{hex}{-keep}{-sep=>qr/-/}\b!)
         {
-        # Found a Physical Address line.
-        print STDERR " DDD found phys line ==$sLine==\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
-        # print STDERR " DDD   re=$RE{net}{MAC}{hex}{-sep=>qr/-/}=\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
-        if ($sLine =~ m!\s$RE{net}{MAC}{hex}{-keep}{-sep=>qr/-/}\b!)
-          {
-          # Matched the 6-byte ethernet address:
-          # print STDERR " DDD   1=$1= 2=$2= 3=$3= 4=$4= 5=$5= 6=$6= 7=$7=\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
-          $sAddr = $1;
-          print STDERR " DDD   found addr ==$sAddr==\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
-          push @asAddr, $sAddr;
-          # Don't return it until we make sure this adapter is active!
-          } # found the ethernet address
-        else
-          {
-          print STDERR " DDD   but no addr!\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
-          }
-        } # found "Physical Address"
-      elsif (
-             # This adapter shows a real IP address:
-             ($sLine =~ m{\s(
-                          IP\s+ADDRESS   # English
+        # Matched the 6-byte ethernet address:
+        # print STDERR " DDD   1=$1= 2=$2= 3=$3= 4=$4= 5=$5= 6=$6= 7=$7=\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
+        $sAddr = $1;
+        print STDERR " DDD   found addr ==$sAddr==\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
+        push @asAddr, $sAddr;
+        # Don't return it until we make sure this adapter is active!
+        next LINE_IPCONFIG;
+        } # found the ethernet address
+      if (
+          # ASSUME that the FIRST address line after the mac is the IP
+          # address (and ASSUME that the subnet mask, etc. are on
+          # LATER lines:
+          1 ||
+          ($sLine =~ m{\s(
+                          IP\sAddress   # English
                           |
-                          IP-Adresse     # German
+                          IP-Adresse    # German
                           |
-                          Adresse\s+IP   # French
+                          Adresse\sIP   # French
                           )}ix)
-             &&
-             ($sLine =~ m!\s$RE{net}{IPv4}!i)
-             &&
-             # The IP address is non-zero:
-             ($sLine !~ m!\s0.0.0.0!i)
-            )
+         )
         {
-        print STDERR " DDD found ip   line ==$sLine==\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
-        if ($sAddr ne '')
+        # print STDERR " DDD   found ip   line ==$sLine==\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
+        if ($sLine =~ m!\s:\s($RE{net}{IPv4})!i)
           {
-          # We've already seen the ethernet address; return it:
-          $sMethod = 'ipconfig';
-          last LINE_IPCONFIG;
-          } # we've already seen the physical address
-        print STDERR " DDD   but no physical address line yet.\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
-        } # found a non-zero IP address
-      else
-        {
-        print STDERR " DDD some other line ==$sLine==\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
-        }
+          print STDERR " DDD   matched ip pattern ==$sLine==\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
+          if ($1 ne q/0.0.0.0/)
+          # The IP address is non-zero:
+            {
+            print STDERR " DDD   found non-zero ip ==$1==\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
+            if ($sAddr ne '')
+              {
+              # We've already seen the ethernet address; return it:
+              $sMethod = 'ipconfig';
+              # Reset our flag in case there are more adapters listed:
+              $sAddr = '';
+              last LINE_IPCONFIG;
+              } # we've already seen the physical address
+            print STDERR " DDD   but no physical address line yet.\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
+            } # found a non-zero IP address
+          } # found an IP address
+        next LINE_IPCONFIG;
+        } # found "IP address"
+      print STDERR " DDD some other line ==$sLine==\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
       } # foreach LINE_IPCONFIG
     # If we get here, then no adapters were active.
     if (scalar(@asAddr) == 1)
@@ -135,7 +128,7 @@ sub get_address
   elsif ($^O =~ m!linux!i)
     {
     my $ARP = q{/sbin/arp};
-    if (-f $ARP)
+    if (-x $ARP)
       {
       my $sHostname = hostname;
       # print STDERR " + hostname ==$sHostname==\n";
@@ -152,9 +145,13 @@ sub get_address
           } # if
         } # foreach
       } # if
+    else
+      {
+      # Can not find an executable arp
+      }
     # If we get here, then arp FAILED.  Try ifconfig:
     my $IFCONFIG = q{/sbin/ifconfig};
-    if (-f $IFCONFIG)
+    if (-x $IFCONFIG)
       {
       my @as = qx{ $IFCONFIG };
  LINE_IFCONFIG_LINUX:
@@ -169,7 +166,11 @@ sub get_address
           } # if
         } # foreach
       } # if
-    }
+    else
+      {
+      # Can not find an executable ifconfig
+      }
+    } # if linux
   elsif ($^O =~ m!solaris!i)
     {
     my $ARP = q{/usr/sbin/arp};
@@ -192,7 +193,7 @@ sub get_address
       } # if
     # If we get here, then arp FAILED.  Try ifconfig:
     my $IFCONFIG = q{/usr/sbin/ifconfig};
-    if (-f $IFCONFIG)
+    if (-x $IFCONFIG)
       {
       my @as = qx{ $IFCONFIG -a };
     LINE_IFCONFIG_SOLARIS:
@@ -207,9 +208,14 @@ sub get_address
           } # if
         } # foreach
       } # if
-    }
+    else
+      {
+      # Can not find an executable ifconfig
+      }
+    } # if solaris
   elsif ($^O =~ m!darwin!i)
     {
+    # Assume it's in the path:
     my @as = qx{ ifconfig };
  LINE_IFCONFIG_DARWIN:
     foreach my $sLine (@as)

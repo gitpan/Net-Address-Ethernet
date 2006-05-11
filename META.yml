@@ -1,16 +1,17 @@
-name: Net-Address-Ethernet
-version: 1.072
-author: Martin Thurn <mthurn@cpan.org>
-license: perl
-distribution_type: module
+author: 'Martin Thurn <mthurn@cpan.org>'
 build_requires:
   Test::More: 0
   Test::Pod: 0
-requires:
-  perl: 5.004
-  Regexp::Common: 0
-  Sys::Hostname: 0
+distribution_type: module
+generated_by: Module::Install version 0.61
+license: perl
+name: Net-Address-Ethernet
 no_index:
   directory:
     - inc
-generated_by: Module::Install version 0.37
+    - t
+requires:
+  Regexp::Common: 0
+  Sys::Hostname: 0
+  perl: 5.004
+version: 1.073
