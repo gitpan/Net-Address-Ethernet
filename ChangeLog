@@ -1,3 +1,7 @@
+2006-07-08    <Daddy@C-3PO>
+
+	* lib/Net/Address/Ethernet.pm (get_address): now able to find ipconfig outside of PATH
+
 2005-09-23    <Daddy@C-3PO>
 
 	* lib/Net/Address/Ethernet.pm: turn off debugging!

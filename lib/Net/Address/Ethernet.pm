@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.73 2006/05/11 00:16:37 Daddy Exp $
+# $Id: Ethernet.pm,v 1.74 2006/07/08 19:30:35 Daddy Exp $
 
 =head1 NAME
 
@@ -25,6 +25,8 @@ package Net::Address::Ethernet;
 
 use Data::Dumper; # for debugging only
 use Exporter;
+use Env::Path;
+use File::Spec::Functions;
 use Regexp::Common;
 use Sys::Hostname;
 
@@ -36,12 +38,13 @@ use constant DEBUG_IPCONFIG => 0;
 
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 @ISA = qw( Exporter );
-$VERSION = do { my @r = (q$Revision: 1.73 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.74 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 %EXPORT_TAGS = ( 'all' => [ qw( get_address method canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 @EXPORT = qw( );
 
+my $sIpconfigHome = '';
 my $sMethod = 'N/A';
 
 =item get_address
@@ -53,16 +56,40 @@ When called in array context, returns a 6-element list representing
 the 6 bytes of the address in decimal.  For example,
 (26,43,60,77,94,111).
 
+On Windows (MSWin32), you can set package variable $sIpconfigHome to
+the folder containing ipconfig.exe (if ipconfig is not found your
+PATH).
+
+  $Net::Address::Ethernet::sIpconfigHome = 'C:\\my\\bin';
+  my $sAddr = &Net::Address::Ethernet::get_address;
+
 =cut
 
 sub get_address
   {
-  my $sAddr;
+  my $sAddr = undef;
   $sMethod = 'failed';
   if ($^O =~ m!Win32!i)
     {
     my @asAddr;
-    my @as = qx{ ipconfig /all };
+    # Find out where ipconfig is:
+    my $sIpconfig;
+ TRY_IPCONFIG:
+    foreach my $sTryDir ($sIpconfigHome,
+                         Env::Path->PATH->List, curdir,
+                         'C:\\windows\\system32', 'C:\\winnt\\system32')
+      {
+      $sIpconfig = catfile($sTryDir, 'ipconfig.exe');
+      if (-x $sIpconfig)
+        {
+        last TRY_IPCONFIG;
+        } # if
+      undef $sIpconfig;
+      } # foreach TRY_IPCONFIG
+    goto ALL_DONE unless $sIpconfig;
+    print STDERR " DDD found $sIpconfig\n" if (DEBUG_IPCONFIG || $ENV{N_A_E_DEBUG});
+    # Put double-quotes around it in case the path contains spaces:
+    my @as = qx{ "$sIpconfig" /all };
  LINE_IPCONFIG:
     foreach my $sLine (@as)
       {

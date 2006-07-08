@@ -8,6 +8,8 @@ author('Martin Thurn <mthurn@cpan.org>');
 license('perl');
 
 requires( perl => 5.004 );
+requires('Env::Path');
+requires('File::Spec');
 requires('Regexp::Common');
 requires('Sys::Hostname');
 
