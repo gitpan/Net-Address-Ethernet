@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.76 2006/07/18 23:55:59 Daddy Exp $
+# $Id: Ethernet.pm,v 1.77 2006/07/21 00:23:44 Daddy Exp $
 
 =head1 NAME
 
@@ -40,7 +40,7 @@ use constant DEBUG_IPCONFIG => 0;
 
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 @ISA = qw( Exporter );
-$VERSION = do { my @r = (q$Revision: 1.76 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.77 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 %EXPORT_TAGS = ( 'all' => [ qw( get_address method canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -324,7 +324,7 @@ format of `ipconfig /all` or `arp <hostname>` or `ifconfig` from your system.
 
 =head1 AUTHOR
 
-Martin Thurn (mthurn@cpan.org).
+Martin Thurn (mthurn@cpan.org).  L<http://www.sandcrawler.com/SWB/cpan-modules.html>
 
 =cut
 
