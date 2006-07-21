@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.74 2006/07/08 19:30:35 Daddy Exp $
+# $Id: Ethernet.pm,v 1.76 2006/07/18 23:55:59 Daddy Exp $
 
 =head1 NAME
 
@@ -23,10 +23,12 @@ The following functions will be exported to your namespace if you request :all l
 
 package Net::Address::Ethernet;
 
+use Carp;
 use Data::Dumper; # for debugging only
 use Exporter;
 use Env::Path;
 use File::Spec::Functions;
+use Net::Domain;
 use Regexp::Common;
 use Sys::Hostname;
 
@@ -38,7 +40,7 @@ use constant DEBUG_IPCONFIG => 0;
 
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 @ISA = qw( Exporter );
-$VERSION = do { my @r = (q$Revision: 1.74 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.76 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 %EXPORT_TAGS = ( 'all' => [ qw( get_address method canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -69,6 +71,9 @@ sub get_address
   {
   my $sAddr = undef;
   $sMethod = 'failed';
+  my $sHostname = hostname || Net::Domain::hostname || '';
+  my $sHostfqdn = Net::Domain::hostfqdn || '';
+  my @aasCmd;
   if ($^O =~ m!Win32!i)
     {
     my @asAddr;
@@ -157,45 +162,29 @@ sub get_address
     my $ARP = q{/sbin/arp};
     if (-x $ARP)
       {
-      my $sHostname = hostname;
-      # print STDERR " + hostname ==$sHostname==\n";
-      my @as = qx{ $ARP $sHostname };
- LINE_ARP_LINUX:
-      foreach my $sLine (@as)
+      my $re = qr{\sETHER\s+$RE{net}{MAC}{-keep}\s}i;
+ LINUX_ARP_TRY:
+      foreach my $sTry ($sHostname, $sHostfqdn)
         {
-        DEBUG_LINUX && print STDERR " + line of arp ==$sLine==\n";
-        if ($sLine =~ m!\sETHER\s+$RE{net}{MAC}{-keep}\s!i)
-          {
-          $sAddr = $1;
-          $sMethod = 'arp';
-          goto ALL_DONE;
-          } # if
-        } # foreach
+        next LINUX_ARP_TRY if ($sTry eq '');
+        push @aasCmd, [qq{$ARP $sTry}, $re, 'arp'];
+        } # foreach LINUX_ARP_TRY
       } # if
     else
       {
       # Can not find an executable arp
+      # warn " WWW your OS is linux but you have no $ARP!?!\n";
       }
-    # If we get here, then arp FAILED.  Try ifconfig:
     my $IFCONFIG = q{/sbin/ifconfig};
     if (-x $IFCONFIG)
       {
-      my @as = qx{ $IFCONFIG };
- LINE_IFCONFIG_LINUX:
-      foreach my $sLine (@as)
-        {
-        DEBUG_LINUX && print STDERR " + line of ifconfig ==$sLine==\n";
-        if ($sLine =~ m!\bETHERNET\s+HWADDR\s+$RE{net}{MAC}{-keep}\b!i)
-          {
-          $sAddr = $1;
-          $sMethod = 'ifconfig';
-          goto ALL_DONE;
-          } # if
-        } # foreach
+      my $re = qr{\bETHERNET\s+HWADDR\s+$RE{net}{MAC}{-keep}\b}i;
+      push @aasCmd, [qq{$IFCONFIG}, $re, 'ifconfig'];
       } # if
     else
       {
       # Can not find an executable ifconfig
+      # warn " WWW your OS is linux but you have no $IFCONFIG!?!\n";
       }
     } # if linux
   elsif ($^O =~ m!solaris!i)
@@ -203,37 +192,19 @@ sub get_address
     my $ARP = q{/usr/sbin/arp};
     if (-f $ARP)
       {
-      my $sHostname = hostname;
-      # print STDERR " + hostname ==$sHostname==\n";
-      my @as = qx{ $ARP $sHostname };
-    LINE_ARP_SOLARIS:
-      foreach my $sLine (@as)
+      my $re = qr{\sAT\s+$RE{net}{MAC}{-keep}\s}i;
+ SOLARIS_ARP_TRY:
+      foreach my $sTry ($sHostname, $sHostfqdn)
         {
-        DEBUG_SOLARIS && print STDERR " + line of arp ==$sLine==\n";
-        if ($sLine =~ m!\sAT\s+$RE{net}{MAC}{-keep}\s!i)
-          {
-          $sAddr = $1;
-          $sMethod = 'arp';
-          goto ALL_DONE;
-          } # if
-        } # foreach
+        next LINUX_ARP_TRY if ($sTry eq '');
+        push @aasCmd, [qq{$ARP $sTry}, $re, 'arp'];
+        } # foreach LINUX_ARP_TRY
       } # if
-    # If we get here, then arp FAILED.  Try ifconfig:
     my $IFCONFIG = q{/usr/sbin/ifconfig};
     if (-x $IFCONFIG)
       {
-      my @as = qx{ $IFCONFIG -a };
-    LINE_IFCONFIG_SOLARIS:
-      foreach my $sLine (@as)
-        {
-        DEBUG_SOLARIS && print STDERR " + line of ifconfig ==$sLine==\n";
-        if ($sLine =~ m!\bETHER\s+$RE{net}{MAC}{-keep}\b!i)
-          {
-          $sAddr = $1;
-          $sMethod = 'ifconfig';
-          goto ALL_DONE;
-          } # if
-        } # foreach
+      my $re = qr{\bETHER\s+$RE{net}{MAC}{-keep}\b}i;
+      push @aasCmd, [qq{ $IFCONFIG -a }, $re, 'ifconfig'];
       } # if
     else
       {
@@ -243,25 +214,42 @@ sub get_address
   elsif ($^O =~ m!darwin!i)
     {
     # Assume it's in the path:
-    my @as = qx{ ifconfig };
- LINE_IFCONFIG_DARWIN:
-    foreach my $sLine (@as)
-      {
-      if($sLine =~ m!\sETHER\s+$RE{net}{MAC}{-keep}\s!i)
-        {
-        $sAddr = $1;
-        $sMethod = 'ifconfig';
-        goto ALL_DONE;
-        } # if
-      } # foreach
+    my $re = qr{\sETHER\s+$RE{net}{MAC}{-keep}\s}i;
+    push @aasCmd, [qq{ ifconfig }, $re, 'ifconfig'];
     } # if MACINTOSH
   else
     {
     # Unknown operating system
+    goto ALL_DONE;
     }
+ CMD_TRY:
+    foreach my $ra (@aasCmd)
+      {
+      ($sAddr, $sMethod) = _cmd_output_matches(@$ra);
+      goto ALL_DONE if $sAddr;
+      } # foreach CMD_TRY
  ALL_DONE:
   return wantarray ? map { hex } split(/[-:]/, $sAddr) : &canonical($sAddr);
   } # get_address
+
+
+sub _cmd_output_matches
+  {
+  my $sCmd = shift;
+  my $re = shift;
+  my $sName = shift;
+  my @as = qx{ $sCmd };
+ LINE_OF_CMD:
+  foreach my $sLine (@as)
+    {
+    DEBUG_LINUX && print STDERR " + line of arp ==$sLine==\n";
+    if ($sLine =~ m!$re!)
+      {
+      return ($1, $sName);
+      } # if
+    } # foreach LINE_OF_CMD
+  return (undef, undef);
+  } # _cmd_output_matches
 
 
 =item method
