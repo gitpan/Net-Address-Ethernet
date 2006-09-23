@@ -276,7 +276,7 @@ sub author_from {
 
 sub license_from {
     my ( $self, $file ) = @_;
-
+    # print STDERR " DDD start license_from($file)\n";
     if (
         $self->_slurp($file) =~ m/
         =head \d \s+
@@ -301,12 +301,14 @@ sub license_from {
         );
         while ( my ( $pattern, $license ) = splice( @phrases, 0, 2 ) ) {
             $pattern =~ s{\s+}{\\s+}g;
+            # print STDERR " DDD look for ==$pattern== in ==$license_text==\n";
             if ( $license_text =~ /\b$pattern\b/i ) {
                 $self->license($license);
-                return 1;
-            }
-        }
-    }
+                # print STDERR " DDD   matched!\n";
+                return $license;
+            } # if
+        } # while
+    } # if
 
     warn "Cannot determine license info from $file\n";
     return 'unknown';

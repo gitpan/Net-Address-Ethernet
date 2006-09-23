@@ -1,20 +1,20 @@
-author: 'Martin Thurn <mthurn@cpan.org>'
-build_requires:
+author: Martin Thurn <mthurn@cpan.org>
+build_requires: 
   Test::More: 0
   Test::Pod: 0
 distribution_type: module
 generated_by: Module::Install version 0.63
 license: perl
 name: Net-Address-Ethernet
-no_index:
-  directory:
+no_index: 
+  directory: 
     - inc
     - t
-requires:
+requires: 
   Env::Path: 0
   File::Spec: 0
   Net::Domain: 0
   Regexp::Common: 0
   Sys::Hostname: 0
   perl: 5.004
-version: 1.077
+version: 1.081

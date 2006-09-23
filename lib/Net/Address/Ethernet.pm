@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.77 2006/07/21 00:23:44 Daddy Exp $
+# $Id: Ethernet.pm,v 1.81 2006/09/23 15:00:37 Daddy Exp $
 
 =head1 NAME
 
@@ -40,7 +40,7 @@ use constant DEBUG_IPCONFIG => 0;
 
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 @ISA = qw( Exporter );
-$VERSION = do { my @r = (q$Revision: 1.77 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.81 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 %EXPORT_TAGS = ( 'all' => [ qw( get_address method canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -58,9 +58,11 @@ When called in array context, returns a 6-element list representing
 the 6 bytes of the address in decimal.  For example,
 (26,43,60,77,94,111).
 
-On Windows (MSWin32), you can set package variable $sIpconfigHome to
-the folder containing ipconfig.exe (if ipconfig is not found your
-PATH).
+On Windows (MSWin32), before calling this function, you can set
+package variable $sIpconfigHome to the folder containing ipconfig.exe
+(for example, if ipconfig.exe is not found your PATH, or if you don't
+have permission to execute ipconfig.exe in the normal Windows
+location).
 
   $Net::Address::Ethernet::sIpconfigHome = 'C:\\my\\bin';
   my $sAddr = &Net::Address::Ethernet::get_address;
@@ -137,6 +139,7 @@ sub get_address
               {
               # We've already seen the ethernet address; return it:
               $sMethod = 'ipconfig';
+	      goto ALL_DONE;
               # Reset our flag in case there are more adapters listed:
               $sAddr = '';
               last LINE_IPCONFIG;
@@ -256,7 +259,7 @@ sub _cmd_output_matches
 
 After a successful call to get_address(), the method() function will
 tell you how the information was derived.  Currently there are three
-possibilities: 'arp' or 'ifconfig' for Unix-like systems, or
+possibilities: 'arp' or 'ifconfig' for Unix-like systems, and
 'ipconfig' for Win32.  If you haven't called get_address(), 'N/A' will
 be returned.  If something went wrong during get_address(), 'failed'
 will be returned by method().
@@ -320,7 +323,11 @@ arp, ifconfig, ipconfig
 =head1 BUGS
 
 Please tell the author if you find any!  And please show me the output
-format of `ipconfig /all` or `arp <hostname>` or `ifconfig` from your system.
+of `ipconfig /all`
+or `arp <hostname>`
+or `ifconfig`
+or `ifconfig -a`
+from your system.
 
 =head1 AUTHOR
 
