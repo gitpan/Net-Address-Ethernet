@@ -3,7 +3,7 @@ build_requires:
   Test::More: 0
   Test::Pod: 0
 distribution_type: module
-generated_by: Module::Install version 0.63
+generated_by: Module::Install version 0.64
 license: perl
 name: Net-Address-Ethernet
 no_index: 
@@ -17,4 +17,4 @@ requires:
   Regexp::Common: 0
   Sys::Hostname: 0
   perl: 5.004
-version: 1.081
+version: 1.091

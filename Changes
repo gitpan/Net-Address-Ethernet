@@ -1,3 +1,11 @@
+2006-12-29    <Daddy@C-3PO>
+
+	* lib/Net/Address/Ethernet.pm (get_addresses): new method
+
+2006-09-23    <Daddy@C-3PO>
+
+	* lib/Net/Address/Ethernet.pm (get_address): if multiple active adapters, just return the first one
+
 2006-07-20    <Daddy@C-3PO>
 
 	* Ethernet.pm (get_address): more ways of finding the hostname
