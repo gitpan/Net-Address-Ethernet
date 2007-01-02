@@ -1,3 +1,7 @@
+2007-01-02    <Daddy@C-3PO>
+
+	* lib/Net/Address/Ethernet.pm (_parse_ipconfig_output): tweak patterns for foreign-language DOS
+
 2006-12-29    <Daddy@C-3PO>
 
 	* lib/Net/Address/Ethernet.pm (get_addresses): new method

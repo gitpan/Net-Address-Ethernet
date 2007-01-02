@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.91 2006/12/29 18:50:09 Daddy Exp $
+# $Id: Ethernet.pm,v 1.92 2007/01/02 12:38:29 Daddy Exp $
 
 =head1 NAME
 
@@ -50,7 +50,7 @@ use constant DEBUG_IPCONFIG => 0 || $ENV{N_A_E_DEBUG};
 
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 @ISA = qw( Exporter );
-$VERSION = do { my @r = (q$Revision: 1.91 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.92 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 %EXPORT_TAGS = ( 'all' => [ qw( get_address get_addresses method canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -88,14 +88,14 @@ sub _parse_ipconfig_output
       # Reset the other items:
       $sEthernet = $sIP = '';
       } # if
-    elsif ($sLine =~ m!\s\.\s:\s$RE{net}{MAC}{hex}{-keep}{-sep=>qr/-/}\b!)
+    elsif ($sLine =~ m!\s\.\s?:\s($RE{net}{MAC}{hex}{-sep=>qr/-/})\b!)
       {
       # Matched the 6-byte ethernet address:
       $sEthernet = $1;
       }
     elsif (($sLine =~ m!$qrIPADDRESS!)
            &&
-           ($sLine =~ m!\s:\s($RE{net}{IPv4})!i))
+           ($sLine =~ m!\.\s?:\s($RE{net}{IPv4})!i))
       {
       $sIP = $1;
       $iActive = ($sIP ne q/0.0.0.0/);
@@ -203,27 +203,29 @@ sub get_addresses
   elsif ($^O =~ m!linux!i)
     {
     DEBUG_MATCH && print STDERR " DDD this is linux.\n";
-      if (0)
-	{
-	  my $ARP = q{/sbin/arp};
-	  if (-x $ARP)
-	    {
-	      my $re = qr{\sETHER\s+$RE{net}{MAC}{-keep}\s}i;
-	      my $sHostname = hostname || Net::Domain::hostname || '';
-	      my $sHostfqdn = Net::Domain::hostfqdn || '';
-	    LINUX_ARP_TRY:
-	      foreach my $sTry ($sHostname, $sHostfqdn)
-		{
-		  next LINUX_ARP_TRY if ($sTry eq '');
-		  push @asCmd, qq{$ARP $sTry};
-		} # foreach LINUX_ARP_TRY
-	    } # if
-	  else
-	    {
-	      # Can not find an executable arp
-	      # warn " WWW your OS is linux but you have no $ARP!?!\n";
-	    }
-	} # if try arp
+    # I haven't seen any Linux where ifconfig does not give us all the
+    # info we need, ergo skip arp:
+    if (0)
+      {
+      my $ARP = q{/sbin/arp};
+      if (-x $ARP)
+        {
+        my $re = qr{\sETHER\s+$RE{net}{MAC}{-keep}\s}i;
+        my $sHostname = hostname || Net::Domain::hostname || '';
+        my $sHostfqdn = Net::Domain::hostfqdn || '';
+ LINUX_ARP_TRY:
+        foreach my $sTry ($sHostname, $sHostfqdn)
+          {
+          next LINUX_ARP_TRY if ($sTry eq '');
+          push @asCmd, qq{$ARP $sTry};
+          } # foreach LINUX_ARP_TRY
+        } # if
+      else
+        {
+        # Can not find an executable arp
+        # warn " WWW your OS is linux but you have no $ARP!?!\n";
+        }
+      } # if try arp
     my $IFCONFIG = q{/sbin/ifconfig};
     if (-x $IFCONFIG)
       {
@@ -351,7 +353,7 @@ sub _cmd_output_matches
                       };
 	$sMethod = 'ifconfig';
         } # if
-      }
+      } # elsif
     } # while LINE_OF_CMD
   } # _cmd_output_matches
 
