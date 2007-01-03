@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.92 2007/01/02 12:38:29 Daddy Exp $
+# $Id: Ethernet.pm,v 1.93 2007/01/03 22:54:51 Daddy Exp $
 
 =head1 NAME
 
@@ -50,7 +50,7 @@ use constant DEBUG_IPCONFIG => 0 || $ENV{N_A_E_DEBUG};
 
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 @ISA = qw( Exporter );
-$VERSION = do { my @r = (q$Revision: 1.92 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.93 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 %EXPORT_TAGS = ( 'all' => [ qw( get_address get_addresses method canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -463,8 +463,8 @@ This is an example of @asInfo on MSWin32:
    },
 )
 
-> /usr/sbin/arp copper
-copper (14.81.16.10) at 03:33:ba:46:f2:ef permanent published
+> /usr/sbin/arp myhost
+myhost (14.81.16.10) at 03:33:ba:46:f2:ef permanent published
 
 > /usr/sbin/ifconfig -a
 lo0: flags=1000849<UP,LOOPBACK,RUNNING,MULTICAST,IPv4> mtu 8232 index 1
