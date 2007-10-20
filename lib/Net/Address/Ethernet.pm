@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.93 2007/01/03 22:54:51 Daddy Exp $
+# $Id: Ethernet.pm,v 1.95 2007/10/20 18:07:27 Daddy Exp $
 
 =head1 NAME
 
@@ -50,7 +50,7 @@ use constant DEBUG_IPCONFIG => 0 || $ENV{N_A_E_DEBUG};
 
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 @ISA = qw( Exporter );
-$VERSION = do { my @r = (q$Revision: 1.93 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.95 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 %EXPORT_TAGS = ( 'all' => [ qw( get_address get_addresses method canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -266,6 +266,11 @@ sub get_addresses
     # Assume it's in the path:
     push @asCmd, qq{ ifconfig };
     } # if MACINTOSH
+  elsif ($^O =~ m!cygwin!i)
+    {
+    # Assume it's in the path:
+    push @asCmd, qq{ ipconfig };
+    } # if MACINTOSH
   else
     {
     # Unknown operating system
@@ -298,12 +303,7 @@ sub _cmd_output_matches
     {
     my $sLine = shift @as;
     DEBUG_MATCH && print STDERR " DDD output line of cmd ==$sLine==\n";
-    if ($sLine =~ m!\sETHER\s+($RE{net}{MAC})\s!i)
-      {
-      # Looks like ifconfig on darwin.
-      
-      }
-    elsif ($sLine =~ m!\(($RE{net}{IPv4})\)\s+AT\s+($RE{net}{MAC})\b!i)
+    if ($sLine =~ m!\(($RE{net}{IPv4})\)\s+AT\s+($RE{net}{MAC})\b!i)
       {
       # Looks like arp on Solaris.  Remember this IP => MAC for later...
       $hssMACofIP{$1} = $2;
@@ -321,6 +321,12 @@ sub _cmd_output_matches
         {
         my $sIP = $1;
         DEBUG_MATCH && print STDERR " DDD   looks like ifconfig line 2 on Solaris (ip=$sIP)...\n";
+        # Look ahead and see if ether appears on the next line (as darwin):
+        $sLine = shift @as;
+        if ($sLine =~ m!ETHER\s+($RE{net}{MAC})\b!i)
+          {
+          $hssMACofIP{$sIP} = $1;
+          } # if
         push @ahInfo, {
                        sAdapter => $sAdapter,
                        sEthernet => &canonical($hssMACofIP{$sIP} || ''),

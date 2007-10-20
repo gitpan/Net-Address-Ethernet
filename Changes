@@ -1,3 +1,8 @@
+2007-10-20    <Daddy@C-3PO>
+
+	* lib/Net/Address/Ethernet.pm (get_addresses): added block for cygwin
+	(_cmd_output_matches): added patterns for darwin (not tested)
+
 2007-01-02    <Daddy@C-3PO>
 
 	* lib/Net/Address/Ethernet.pm (_parse_ipconfig_output): tweak patterns for foreign-language DOS
