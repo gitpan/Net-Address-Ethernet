@@ -1,3 +1,7 @@
+2007-10-25    <Daddy@C-3PO>
+
+	* lib/Net/Address/Ethernet.pm (_cmd_output_matches): updated for darwin, and fixed backward for solaris
+
 2007-10-20    <Daddy@C-3PO>
 
 	* lib/Net/Address/Ethernet.pm (get_addresses): added block for cygwin

@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.95 2007/10/20 18:07:27 Daddy Exp $
+# $Id: Ethernet.pm,v 1.96 2007/10/25 22:50:31 Daddy Exp $
 
 =head1 NAME
 
@@ -45,12 +45,12 @@ use Sys::Hostname;
 
 use strict;
 
-use constant DEBUG_MATCH => 0;
+use constant DEBUG_MATCH => 0 || $ENV{N_A_E_DEBUG};
 use constant DEBUG_IPCONFIG => 0 || $ENV{N_A_E_DEBUG};
 
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 @ISA = qw( Exporter );
-$VERSION = do { my @r = (q$Revision: 1.95 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.96 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 %EXPORT_TAGS = ( 'all' => [ qw( get_address get_addresses method canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -141,6 +141,7 @@ sub get_address
     } # foreach TRY_ADDR
   return wantarray ? map { hex } split(/[-:]/, $sAddr) : &canonical($sAddr);
   } # get_addresses
+
 
 =item get_addresses
 
@@ -310,26 +311,35 @@ sub _cmd_output_matches
       DEBUG_MATCH && print STDERR " DDD   looks like arp on Solaris ($1=>$2)...\n";
       $sMethod = 'arp';
       } # if
-    elsif ($sLine =~ m!\A(.+?):\sflags=!)
+    elsif ($sLine =~ m!\A(.+?):\s+flags=!)
       {
       # Looks like ifconfig on Solaris.  Remember this adapter name for later...
       my $sAdapter = $1;
       DEBUG_MATCH && print STDERR " DDD   looks like ifconfig line 1 on Solaris ($sAdapter)...\n";
       # Look ahead to the IPv4 on the next line:
       $sLine = shift @as;
-      if ($sLine =~ m!\bINET\s($RE{net}{IPv4})\b!i)
+      if ($sLine =~ m!\bINET\s+($RE{net}{IPv4})\s+NETMASK!i)
         {
         my $sIP = $1;
         DEBUG_MATCH && print STDERR " DDD   looks like ifconfig line 2 on Solaris (ip=$sIP)...\n";
-        # Look ahead and see if ether appears on the next line (as darwin):
-        $sLine = shift @as;
+        # Look ahead and see if "ether" appears on the next line (as darwin):
+        $sLine = shift @as || '';
         if ($sLine =~ m!ETHER\s+($RE{net}{MAC})\b!i)
           {
-          $hssMACofIP{$sIP} = $1;
+          my $sMAC = $1;
+          DEBUG_MATCH && print STDERR " DDD   looks like ifconfig line 3 on darwin (ether=$sMAC)...\n";
+          $hssMACofIP{$sIP} = $sMAC;
           } # if
+        else
+          {
+          # Put the line back, in case this is not darwin:
+          unshift @as, $sLine;
+          }
+        my $sEther = &canonical($hssMACofIP{$sIP} || '');
+        DEBUG_MATCH && print STDERR " DDD returning $sAdapter-->$sEther ($sIP)\n";
         push @ahInfo, {
                        sAdapter => $sAdapter,
-                       sEthernet => &canonical($hssMACofIP{$sIP} || ''),
+                       sEthernet => $sEther,
                        sIP => $sIP,
                        # ifconfig only reports active addresses?
                        iActive => 1,
