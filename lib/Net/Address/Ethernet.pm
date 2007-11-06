@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.96 2007/10/25 22:50:31 Daddy Exp $
+# $Id: Ethernet.pm,v 1.97 2007/11/06 23:46:10 Daddy Exp $
 
 =head1 NAME
 
@@ -50,7 +50,7 @@ use constant DEBUG_IPCONFIG => 0 || $ENV{N_A_E_DEBUG};
 
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 @ISA = qw( Exporter );
-$VERSION = do { my @r = (q$Revision: 1.96 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.97 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 %EXPORT_TAGS = ( 'all' => [ qw( get_address get_addresses method canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -110,6 +110,7 @@ sub _parse_ipconfig_output
     } # foreach
   # print STDERR Dumper(\@ahInfo);
   } # _parse_ipconfig_output
+
 
 =item get_address
 
