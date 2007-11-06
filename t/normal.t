@@ -19,7 +19,8 @@ if (! ok(is_address($s)))
   {
   # Repeat the test with debugging turned on.  (Luckily, the module
   # does not cache results!):
-  $ENV{N_A_E_DEBUG} = 99;
+  $Net::Address::Ethernet::DEBUG_MATCH = $Net::Address::Ethernet::DEBUG_MATCH = 88;
+  $Net::Address::Ethernet::DEBUG_IPCONFIG = $Net::Address::Ethernet::DEBUG_IPCONFIG = 88;
   $s = get_address;
   } # if
 is($s, canonical($s));

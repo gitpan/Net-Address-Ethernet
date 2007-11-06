@@ -22,4 +22,4 @@ requires:
   Regexp::Common: 0
   Sys::Hostname: 0
   perl: 5.004
-version: 1.097
+version: 1.098
