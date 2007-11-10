@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.98 2007/11/06 23:50:34 Daddy Exp $
+# $Id: Ethernet.pm,v 1.99 2007/11/10 04:10:59 Daddy Exp $
 
 =head1 NAME
 
@@ -45,16 +45,14 @@ use Sys::Hostname;
 
 use strict;
 
-my $DEBUG_MATCH = 0 || $ENV{N_A_E_DEBUG};
-my $DEBUG_IPCONFIG = 0 || $ENV{N_A_E_DEBUG};
+use vars qw( $DEBUG $VERSION @EXPORT_OK %EXPORT_TAGS );
+use base 'Exporter';
+$VERSION = do { my @r = (q$Revision: 1.99 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
-use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
-@ISA = qw( Exporter );
-$VERSION = do { my @r = (q$Revision: 1.98 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$DEBUG = 0 || $ENV{N_A_E_DEBUG};
 
 %EXPORT_TAGS = ( 'all' => [ qw( get_address get_addresses method canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
-@EXPORT = qw( );
 
 my $sIpconfigHome = '';
 my $sMethod = 'N/A';
@@ -125,8 +123,9 @@ the 6 bytes of the address in decimal.  For example,
 
 sub get_address
   {
-  my @a = &get_addresses;
-  $DEBUG_MATCH && print STDERR " DDD in get_address, a is ", Dumper(\@a);
+  $DEBUG = shift;
+  my @a = &get_addresses($DEBUG);
+  _debug(" DDD in get_address, a is ", Dumper(\@a));
   # Even if none are active, we'll return the first one:
   my $sAddr = $a[0]->{sEthernet};
   # Look through the list, returning the first active one:
@@ -141,7 +140,7 @@ sub get_address
       } # if
     } # foreach TRY_ADDR
   return wantarray ? map { hex } split(/[-:]/, $sAddr) : &canonical($sAddr);
-  } # get_addresses
+  } # get_address
 
 
 =item get_addresses
@@ -171,11 +170,11 @@ For example:
    'iActive' => 1,
   },
 
-
 =cut
 
 sub get_addresses
   {
+  $DEBUG = shift;
   my $sAddr = undef;
   $sMethod = 'failed';
   my @asCmd;
@@ -197,14 +196,19 @@ sub get_addresses
       undef $sIpconfig;
       } # foreach TRY_IPCONFIG
     goto ALL_DONE unless $sIpconfig;
-    print STDERR " DDD found $sIpconfig\n" if $DEBUG_IPCONFIG;
+    _debug(" DDD found $sIpconfig\n");
     # Put double-quotes around it in case the path contains spaces:
-    my @as = qx{ "$sIpconfig" /all };
+    my $sCmd = qq{"$sIpconfig" /all};
+    my @as = qx{$sCmd};
+    if (! @as)
+      {
+      warn " WWW execution of `$sCmd` failed(?)\n";
+      } # if
     &_parse_ipconfig_output(\@as);
     } # if Win32
   elsif ($^O =~ m!linux!i)
     {
-    $DEBUG_MATCH && print STDERR " DDD this is linux.\n";
+    _debug(" DDD this is linux.\n");
     # I haven't seen any Linux where ifconfig does not give us all the
     # info we need, ergo skip arp:
     if (0)
@@ -236,7 +240,7 @@ sub get_addresses
     else
       {
       # Can not find an executable ifconfig
-      # warn " WWW your OS is linux but you have no $IFCONFIG!?!\n";
+      warn " WWW your OS is linux but you have no $IFCONFIG!?!\n";
       }
     } # if linux
   elsif ($^O =~ m!solaris!i)
@@ -282,7 +286,7 @@ sub get_addresses
     {
     &_cmd_output_matches(\@ahInfo, $sCmd);
     } # foreach CMD_TRY
-  $DEBUG_MATCH && print STDERR Dumper(\@ahInfo);
+  _debug(Dumper(\@ahInfo));
  ALL_DONE:
   return @ahInfo;
   } # get_addresses
@@ -297,38 +301,42 @@ sub _cmd_output_matches
   # Required arg2 = command-line to run:
   my $sCmd = shift;
   return if @ahInfo;
-  $DEBUG_MATCH && print STDERR " DDD running cmd ==$sCmd==...\n";
+  _debug(" DDD running cmd ==$sCmd==...\n");
   my @as = qx{ $sCmd };
+  if (! @as)
+    {
+    warn " WWW execution of `$sCmd` failed(?)\n";
+    } # if
   chomp @as;
  LINE_OF_CMD:
   while (@as)
     {
     my $sLine = shift @as;
-    $DEBUG_MATCH && print STDERR " DDD output line of cmd ==$sLine==\n";
+    _debug(" DDD output line of cmd ==$sLine==\n");
     if ($sLine =~ m!\(($RE{net}{IPv4})\)\s+AT\s+($RE{net}{MAC})\b!i)
       {
       # Looks like arp on Solaris.  Remember this IP => MAC for later...
       $hssMACofIP{$1} = $2;
-      $DEBUG_MATCH && print STDERR " DDD   looks like arp on Solaris ($1=>$2)...\n";
+      _debug(" DDD   looks like arp on Solaris ($1=>$2)...\n");
       $sMethod = 'arp';
       } # if
     elsif ($sLine =~ m!\A(.+?):\s+flags=!)
       {
       # Looks like ifconfig on Solaris.  Remember this adapter name for later...
       my $sAdapter = $1;
-      $DEBUG_MATCH && print STDERR " DDD   looks like ifconfig line 1 on Solaris ($sAdapter)...\n";
+      _debug(" DDD   looks like ifconfig line 1 on Solaris ($sAdapter)...\n");
       # Look ahead to the IPv4 on the next line:
       $sLine = shift @as;
       if ($sLine =~ m!\bINET\s+($RE{net}{IPv4})\s+NETMASK!i)
         {
         my $sIP = $1;
-        $DEBUG_MATCH && print STDERR " DDD   looks like ifconfig line 2 on Solaris (ip=$sIP)...\n";
+        _debug(" DDD   looks like ifconfig line 2 on Solaris (ip=$sIP)...\n");
         # Look ahead and see if "ether" appears on the next line (as darwin):
         $sLine = shift @as || '';
         if ($sLine =~ m!ETHER\s+($RE{net}{MAC})\b!i)
           {
           my $sMAC = $1;
-          $DEBUG_MATCH && print STDERR " DDD   looks like ifconfig line 3 on darwin (ether=$sMAC)...\n";
+          _debug(" DDD   looks like ifconfig line 3 on darwin (ether=$sMAC)...\n");
           $hssMACofIP{$sIP} = $sMAC;
           } # if
         else
@@ -337,7 +345,7 @@ sub _cmd_output_matches
           unshift @as, $sLine;
           }
         my $sEther = &canonical($hssMACofIP{$sIP} || '');
-        $DEBUG_MATCH && print STDERR " DDD returning $sAdapter-->$sEther ($sIP)\n";
+        _debug(" DDD returning $sAdapter-->$sEther ($sIP)\n");
         push @ahInfo, {
                        sAdapter => $sAdapter,
                        sEthernet => $sEther,
@@ -354,13 +362,13 @@ sub _cmd_output_matches
       # name for later...
       my $sAdapter = $1;
       my $sMAC = $2;
-      $DEBUG_MATCH && print STDERR " DDD   looks like ifconfig line 1 on FC6 ($sAdapter,$sMAC)...\n";
+      _debug(" DDD   looks like ifconfig line 1 on FC6 ($sAdapter,$sMAC)...\n");
       # Look ahead to the IPv4 on the next line:
       $sLine = shift @as;
       if ($sLine =~ m!\sINET\sADDR:($RE{net}{IPv4})\s!i)
         {
         my $sIP = $1;
-        $DEBUG_MATCH && print STDERR " DDD   looks like ifconfig line 2 on FC6 (ip=$sIP)...\n";
+        _debug(" DDD   looks like ifconfig line 2 on FC6 (ip=$sIP)...\n");
         push @ahInfo, {
                        sAdapter => $sAdapter,
                        sEthernet => &canonical($sMAC),
@@ -430,6 +438,12 @@ sub canonical
   chop $s;
   return uc $s;
   } # canonical
+
+sub _debug
+  {
+  return if ! $DEBUG;
+  print STDERR @_;
+  } # _debug
 
 =back
 

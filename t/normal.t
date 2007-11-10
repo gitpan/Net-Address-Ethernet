@@ -13,27 +13,28 @@ my %hsqrMethod = (
 
 my $sOS = $^O;
 my $s = get_address;
-ok(defined($s));
-isnt($s, '');
-if (! ok(is_address($s)))
+ok(defined($s), 'defined');
+isnt($s, '', 'not empty');
+my $iIsAnAddress = ok(is_address($s), 'looks like an address');
+if (0 && ! $iIsAnAddress)
   {
-  # Repeat the test with debugging turned on.  (Luckily, the module
-  # does not cache results!):
-  $Net::Address::Ethernet::DEBUG_MATCH = $Net::Address::Ethernet::DEBUG_MATCH = 88;
-  $Net::Address::Ethernet::DEBUG_IPCONFIG = $Net::Address::Ethernet::DEBUG_IPCONFIG = 88;
-  $s = get_address;
+  # I'd like to repeat the test with debugging turned on, to see what
+  # it's trying to parse.  (Unfortunately, the module caches its
+  # parsed results!)
+  $s = get_address(88);
   } # if
-is($s, canonical($s));
+is($s, canonical($s), 'is canonical');
 diag(qq{FYI, your ethernet address is $s});
 my $sMethod = method;
 SKIP:
   {
   skip qq{OS $sOS not known}, 1 if (! exists $hsqrMethod{$sOS});
-  like($sMethod, $hsqrMethod{$sOS});
+  like($sMethod, $hsqrMethod{$sOS}, 'method');
   } # end of SKIP block
-my @a = get_address;
+# Test for array context:
+my @a = get_address(0);
 diag(qq{in integer bytes, that's }. join(',', @a));
-is(scalar(@a), 6);
+is(scalar(@a), 6, 'got 6 bytes');
 
 __END__
 
