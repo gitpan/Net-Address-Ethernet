@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.99 2007/11/10 04:10:59 Daddy Exp $
+# $Id: Ethernet.pm,v 1.100 2007/11/11 18:55:05 Daddy Exp $
 
 =head1 NAME
 
@@ -47,7 +47,7 @@ use strict;
 
 use vars qw( $DEBUG $VERSION @EXPORT_OK %EXPORT_TAGS );
 use base 'Exporter';
-$VERSION = do { my @r = (q$Revision: 1.99 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.100 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 $DEBUG = 0 || $ENV{N_A_E_DEBUG};
 
@@ -60,11 +60,11 @@ my $sMethod = 'N/A';
 my @ahInfo;
 
 my $qrIPADDRESS = qr{\b(
-                        IP\sAddress   # English
+                        IP(v4)?\sAddress   # English
                         |
-                        IP-Adresse    # German
+                        IP(v4)?-Adresse    # German
                         |
-                        Adresse\sIP   # French
+                        Adresse\sIP(v4)?   # French
                         )\b}ix;
 
 sub _parse_ipconfig_output
