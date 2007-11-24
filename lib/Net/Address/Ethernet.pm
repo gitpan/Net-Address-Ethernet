@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.101 2007/11/24 02:46:42 Daddy Exp $
+# $Id: Ethernet.pm,v 1.102 2007/11/24 17:11:56 Daddy Exp $
 
 =head1 NAME
 
@@ -47,7 +47,7 @@ use strict;
 
 use vars qw( $DEBUG $VERSION @EXPORT_OK %EXPORT_TAGS );
 use base 'Exporter';
-$VERSION = do { my @r = (q$Revision: 1.101 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.102 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 $DEBUG = 0 || $ENV{N_A_E_DEBUG};
 
@@ -327,6 +327,11 @@ sub _cmd_output_matches
       _debug(" DDD   looks like ifconfig line 1 on Solaris ($sAdapter)...\n");
       # Look ahead to the IPv4 on the next line:
       $sLine = shift @as;
+      if ($sLine =~ m!\bINET6\s+!i)
+        {
+        _debug(" DDD   looks like ifconfig line 2 on freebsd (inet6)...\n");
+        $sLine = shift @as;
+        } # if
       if ($sLine =~ m!\bINET\s+($RE{net}{IPv4})\s+NETMASK!i)
         {
         my $sIP = $1;
@@ -502,3 +507,33 @@ lo0: flags=1000849<UP,LOOPBACK,RUNNING,MULTICAST,IPv4> mtu 8232 index 1
         inet 127.0.0.1 netmask ff000000
 bge0: flags=1000843<UP,BROADCAST,RUNNING,MULTICAST,IPv4> mtu 1500 index 2
         inet 14.81.16.10 netmask ffffff00 broadcast 14.81.16.255
+
+#### This is amd64-freebsd:
+
+$ ifconfig
+fwe0: flags=108802<BROADCAST,SIMPLEX,MULTICAST,NEEDSGIANT> mtu 1500
+        options=8<VLAN_MTU>
+        ether 02:31:38:31:35:35
+        ch 1 dma -1
+vr0: flags=8843<UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST> mtu 1500
+        inet6 fe8d::2500:bafd:fecd:cdcd%vr0 prefixlen 64 scopeid 0x2 
+        inet 19.16.12.52 netmask 0xffffff00 broadcast 19.16.12.255
+        ether 00:53:b3:c3:3d:39
+        media: Ethernet autoselect (100baseTX <full-duplex>)
+        status: active
+nfe0: flags=8843<UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST> mtu 1500
+        options=8<VLAN_MTU>
+        inet6 fe8e::21e:31ef:fee1:26eb%nfe0 prefixlen 64 scopeid 0x3 
+        ether 00:13:33:53:23:13
+        media: Ethernet autoselect (100baseTX <full-duplex>)
+        status: active
+plip0: flags=108810<POINTOPOINT,SIMPLEX,MULTICAST,NEEDSGIANT> mtu 1500
+lo0: flags=8049<UP,LOOPBACK,RUNNING,MULTICAST> mtu 16384
+        inet6 ::1 prefixlen 128 
+        inet6 fe80::1%lo0 prefixlen 64 scopeid 0x5 
+        inet 127.0.0.1 netmask 0xff000000 
+        inet 127.0.0.2 netmask 0xffffffff 
+        inet 127.0.0.3 netmask 0xffffffff 
+tun0: flags=8051<UP,POINTOPOINT,RUNNING,MULTICAST> mtu 1492
+        inet 83.173.73.3 --> 233.131.83.3 netmask 0xffffffff 
+        Opened by PID 268
