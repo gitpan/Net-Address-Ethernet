@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.100 2007/11/11 18:55:05 Daddy Exp $
+# $Id: Ethernet.pm,v 1.101 2007/11/24 02:46:42 Daddy Exp $
 
 =head1 NAME
 
@@ -47,7 +47,7 @@ use strict;
 
 use vars qw( $DEBUG $VERSION @EXPORT_OK %EXPORT_TAGS );
 use base 'Exporter';
-$VERSION = do { my @r = (q$Revision: 1.100 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.101 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 $DEBUG = 0 || $ENV{N_A_E_DEBUG};
 
@@ -356,7 +356,7 @@ sub _cmd_output_matches
 	$sMethod = 'ifconfig';
         } # if
       } # elsif
-    elsif ($sLine =~ m!\A(.+?)\s.+\sHWADDR\s($RE{net}{MAC})!i)
+    elsif ($sLine =~ m!\A(.+?)\s.+\s(DE\sHW|HWADDR)\s($RE{net}{MAC})!i)
       {
       # Looks like ifconfig on Fedora Core.  Remember this adapter
       # name for later...
@@ -365,7 +365,7 @@ sub _cmd_output_matches
       _debug(" DDD   looks like ifconfig line 1 on FC6 ($sAdapter,$sMAC)...\n");
       # Look ahead to the IPv4 on the next line:
       $sLine = shift @as;
-      if ($sLine =~ m!\sINET\sADDR:($RE{net}{IPv4})\s!i)
+      if ($sLine =~ m!\sINET\s(ADDR|END\.):($RE{net}{IPv4})\s!i)
         {
         my $sIP = $1;
         _debug(" DDD   looks like ifconfig line 2 on FC6 (ip=$sIP)...\n");

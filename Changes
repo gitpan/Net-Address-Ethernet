@@ -1,3 +1,7 @@
+2007-11-23    <Daddy@C-3PO>
+
+	* lib/Net/Address/Ethernet.pm (_cmd_output_matches): should now match Portugese Linux
+
 2007-11-11    <Daddy@C-3PO>
 
 	* lib/Net/Address/Ethernet.pm: fixed ipconfig parser for Vista(?)
