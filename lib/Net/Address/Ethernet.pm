@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.102 2007/11/24 17:11:56 Daddy Exp $
+# $Id: Ethernet.pm,v 1.103 2007/11/25 15:56:20 Daddy Exp $
 
 =head1 NAME
 
@@ -47,7 +47,7 @@ use strict;
 
 use vars qw( $DEBUG $VERSION @EXPORT_OK %EXPORT_TAGS );
 use base 'Exporter';
-$VERSION = do { my @r = (q$Revision: 1.102 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.103 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 $DEBUG = 0 || $ENV{N_A_E_DEBUG};
 
@@ -123,8 +123,7 @@ the 6 bytes of the address in decimal.  For example,
 
 sub get_address
   {
-  $DEBUG = shift;
-  my @a = &get_addresses($DEBUG);
+  my @a = get_addresses();
   _debug(" DDD in get_address, a is ", Dumper(\@a));
   # Even if none are active, we'll return the first one:
   my $sAddr = $a[0]->{sEthernet};
@@ -174,7 +173,6 @@ For example:
 
 sub get_addresses
   {
-  $DEBUG = shift;
   my $sAddr = undef;
   $sMethod = 'failed';
   my @asCmd;
