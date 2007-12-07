@@ -15,11 +15,12 @@ no_index:
   directory: 
     - inc
     - t
+recommends: 
+  Data::Dumper: 0
 requires: 
-  Env::Path: 0
-  File::Spec: 0
   Net::Domain: 0
+  Net::Ifconfig::Wrapper: 0
   Regexp::Common: 0
   Sys::Hostname: 0
   perl: 5.004
-version: 1.103
+version: 1.108

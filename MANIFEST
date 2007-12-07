@@ -15,7 +15,6 @@ README
 t/import_0.t
 t/import_all.t
 t/import_ga.t
-t/import_m.t
 t/normal.t
 t/pod-coverage.t
 t/pod.t

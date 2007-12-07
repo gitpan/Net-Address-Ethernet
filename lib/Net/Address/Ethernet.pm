@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.103 2007/11/25 15:56:20 Daddy Exp $
+# $Id: Ethernet.pm,v 1.108 2007/12/07 00:45:01 Daddy Exp $
 
 =head1 NAME
 
@@ -9,7 +9,6 @@ Net::Address::Ethernet - find hardware ethernet address
 
   use Net::Address::Ethernet qw( get_address );
   my $sAddress = get_address;
-  my $sMethod = &Net::Address::Ethernet::method;
 
 =head1 PLATFORM NOTES
 
@@ -37,77 +36,25 @@ package Net::Address::Ethernet;
 use Carp;
 use Data::Dumper; # for debugging only
 use Exporter;
-use Env::Path;
-use File::Spec::Functions;
 use Net::Domain;
+use Net::Ifconfig::Wrapper qw( Ifconfig );
 use Regexp::Common;
 use Sys::Hostname;
 
 use strict;
 
+use constant DEBUG_MATCH => 0;
+
 use vars qw( $DEBUG $VERSION @EXPORT_OK %EXPORT_TAGS );
 use base 'Exporter';
-$VERSION = do { my @r = (q$Revision: 1.103 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.108 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 $DEBUG = 0 || $ENV{N_A_E_DEBUG};
 
-%EXPORT_TAGS = ( 'all' => [ qw( get_address get_addresses method canonical is_address ), ], );
+%EXPORT_TAGS = ( 'all' => [ qw( get_address get_addresses canonical is_address ), ], );
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
-my $sIpconfigHome = '';
-my $sMethod = 'N/A';
-
 my @ahInfo;
-
-my $qrIPADDRESS = qr{\b(
-                        IP(v4)?\sAddress   # English
-                        |
-                        IP(v4)?-Adresse    # German
-                        |
-                        Adresse\sIP(v4)?   # French
-                        )\b}ix;
-
-sub _parse_ipconfig_output
-  {
-  my $ras = shift;
-  # Clear out and start over:
-  @ahInfo = ();
-  my $sAdapterName = '';
-  my $sEthernet = '';
-  my $sIP = '';
-  my $iActive = 0;
-  foreach my $sLine (@$ras)
-    {
-    # Delete trailing whitespace:
-    $sLine =~ s!\s+\Z!!;
-    if ($sLine =~ m!\A(\S.+):\Z!)
-      {
-      $sAdapterName = $1;
-      # Reset the other items:
-      $sEthernet = $sIP = '';
-      } # if
-    elsif ($sLine =~ m!\s\.\s?:\s($RE{net}{MAC}{hex}{-sep=>qr/-/})\b!)
-      {
-      # Matched the 6-byte ethernet address:
-      $sEthernet = $1;
-      }
-    elsif (($sLine =~ m!$qrIPADDRESS!)
-           &&
-           ($sLine =~ m!\.\s?:\s($RE{net}{IPv4})!i))
-      {
-      $sIP = $1;
-      $iActive = ($sIP ne q/0.0.0.0/);
-      push @ahInfo, {
-                     sAdapter => $sAdapterName,
-                     sEthernet => &canonical($sEthernet),
-                     sIP => $sIP,
-                     iActive => $iActive,
-                    };
-      $sMethod = 'ipconfig';
-      } # elsif
-    } # foreach
-  # print STDERR Dumper(\@ahInfo);
-  } # _parse_ipconfig_output
 
 
 =item get_address
@@ -173,235 +120,84 @@ For example:
 
 sub get_addresses
   {
+  goto ALL_DONE if @ahInfo;
   my $sAddr = undef;
-  $sMethod = 'failed';
-  my @asCmd;
-  if ($^O =~ m!Win32!i)
+  my $rh = Ifconfig('list', '', '', '');
+  _debug(" DDD raw output from Ifconfig is ", Dumper($rh));
+  # Convert their hashref to our array format:
+  foreach my $key (keys %$rh)
     {
-    my @asAddr;
-    # Find out where ipconfig is:
-    my $sIpconfig;
- TRY_IPCONFIG:
-    foreach my $sTryDir ($sIpconfigHome,
-                         Env::Path->PATH->List, curdir,
-                         'C:\\windows\\system32', 'C:\\winnt\\system32')
+    my %hash;
+    _debug(" DDD working on key $key...\n");
+    my $sAdapter = $key;
+    if ($key =~ m!\A{.+}\z!)
       {
-      $sIpconfig = catfile($sTryDir, 'ipconfig.exe');
-      if (-x $sIpconfig)
-        {
-        last TRY_IPCONFIG;
-        } # if
-      undef $sIpconfig;
-      } # foreach TRY_IPCONFIG
-    goto ALL_DONE unless $sIpconfig;
-    _debug(" DDD found $sIpconfig\n");
-    # Put double-quotes around it in case the path contains spaces:
-    my $sCmd = qq{"$sIpconfig" /all};
-    my @as = qx{$sCmd};
-    if (! @as)
-      {
-      warn " WWW execution of `$sCmd` failed(?)\n";
+      $sAdapter = $rh->{$key}->{descr};
       } # if
-    &_parse_ipconfig_output(\@as);
-    } # if Win32
-  elsif ($^O =~ m!linux!i)
-    {
-    _debug(" DDD this is linux.\n");
-    # I haven't seen any Linux where ifconfig does not give us all the
-    # info we need, ergo skip arp:
-    if (0)
+    $hash{sAdapter} = $sAdapter;
+    my @asIP = keys %{$rh->{$key}->{inet}};
+    $hash{sIP} = shift @asIP;
+    my $sEther = $rh->{$key}->{ether} || '';
+    if ($sEther eq '')
       {
-      my $ARP = q{/sbin/arp};
-      if (-x $ARP)
-        {
-        my $re = qr{\sETHER\s+$RE{net}{MAC}{-keep}\s}i;
-        my $sHostname = hostname || Net::Domain::hostname || '';
-        my $sHostfqdn = Net::Domain::hostfqdn || '';
- LINUX_ARP_TRY:
-        foreach my $sTry ($sHostname, $sHostfqdn)
-          {
-          next LINUX_ARP_TRY if ($sTry eq '');
-          push @asCmd, qq{$ARP $sTry};
-          } # foreach LINUX_ARP_TRY
-        } # if
-      else
-        {
-        # Can not find an executable arp
-        # warn " WWW your OS is linux but you have no $ARP!?!\n";
-        }
-      } # if try arp
-    my $IFCONFIG = q{/sbin/ifconfig};
-    if (-x $IFCONFIG)
-      {
-      push @asCmd, qq{$IFCONFIG};
+      $sEther = _find_mac($sAdapter, $hash{sIP});
       } # if
-    else
+    $hash{sEthernet} = $sEther;
+    $hash{iActive} = 0;
+    if ($rh->{$key}->{status} =~ m!\A(1|UP)\z!)
       {
-      # Can not find an executable ifconfig
-      warn " WWW your OS is linux but you have no $IFCONFIG!?!\n";
-      }
-    } # if linux
-  elsif ($^O =~ m!solaris!i)
-    {
-    my $ARP = q{/usr/sbin/arp};
-    if (-x $ARP)
-      {
-      my $sHostname = hostname || Net::Domain::hostname || '';
-      my $sHostfqdn = Net::Domain::hostfqdn || '';
- SOLARIS_ARP_TRY:
-      foreach my $sTry ($sHostname, $sHostfqdn)
-        {
-        next SOLARIS_ARP_TRY if ($sTry eq '');
-        push @asCmd, qq{$ARP $sTry};
-        } # foreach SOLARIS_ARP_TRY
+      $hash{iActive} = 1;
       } # if
-    my $IFCONFIG = q{/usr/sbin/ifconfig};
-    if (-x $IFCONFIG)
-      {
-      push @asCmd, qq{ $IFCONFIG -a };
-      } # if
-    else
-      {
-      # Can not find an executable ifconfig
-      }
-    } # if solaris
-  elsif ($^O =~ m!darwin!i)
-    {
-    # Assume it's in the path:
-    push @asCmd, qq{ ifconfig };
-    } # if MACINTOSH
-  elsif ($^O =~ m!cygwin!i)
-    {
-    # Assume it's in the path:
-    push @asCmd, qq{ ipconfig };
-    } # if MACINTOSH
-  else
-    {
-    # Unknown operating system
-    }
- CMD_TRY:
-  foreach my $sCmd (@asCmd)
-    {
-    &_cmd_output_matches(\@ahInfo, $sCmd);
-    } # foreach CMD_TRY
-  _debug(Dumper(\@ahInfo));
+    push @ahInfo, \%hash;
+    } # foreach
  ALL_DONE:
   return @ahInfo;
   } # get_addresses
 
 
-my %hssMACofIP;
-
-sub _cmd_output_matches
+# Attempt other ways of finding the MAC Address:
+sub _find_mac
   {
-  # Required arg1 = reference to array of results info:
-  my $raInfo = shift;
-  # Required arg2 = command-line to run:
-  my $sCmd = shift;
-  return if @ahInfo;
-  _debug(" DDD running cmd ==$sCmd==...\n");
-  my @as = qx{ $sCmd };
-  if (! @as)
+  my $sAdapter = shift || return;
+  my $sIP = shift || '';
+  # No hope on some OSes:
+  return if ($^O eq 'MSWIn32');
+  my @asARP = qw( /usr/sbin/arp /sbin/arp /bin/arp /usr/bin/arp );
+  my $sHostname = hostname || Net::Domain::hostname || '';
+  my $sHostfqdn = Net::Domain::hostfqdn || '';
+  my @asHost = ($sHostname, $sHostfqdn, '');
+ ARP:
+  foreach my $sARP (@asARP)
     {
-    warn " WWW execution of `$sCmd` failed(?)\n";
-    } # if
-  chomp @as;
+    next ARP if ! -x $sARP;
+ HOSTNAME:
+    foreach my $sHost (@asHost)
+      {
+      my $sCmd = qq{$sARP $sHost};
+      # print STDERR " DDD trying ==$sCmd==\n";
+      my @as = qx{$sCmd};
  LINE_OF_CMD:
-  while (@as)
-    {
-    my $sLine = shift @as;
-    _debug(" DDD output line of cmd ==$sLine==\n");
-    if ($sLine =~ m!\(($RE{net}{IPv4})\)\s+AT\s+($RE{net}{MAC})\b!i)
-      {
-      # Looks like arp on Solaris.  Remember this IP => MAC for later...
-      $hssMACofIP{$1} = $2;
-      _debug(" DDD   looks like arp on Solaris ($1=>$2)...\n");
-      $sMethod = 'arp';
-      } # if
-    elsif ($sLine =~ m!\A(.+?):\s+flags=!)
-      {
-      # Looks like ifconfig on Solaris.  Remember this adapter name for later...
-      my $sAdapter = $1;
-      _debug(" DDD   looks like ifconfig line 1 on Solaris ($sAdapter)...\n");
-      # Look ahead to the IPv4 on the next line:
-      $sLine = shift @as;
-      if ($sLine =~ m!\bINET6\s+!i)
+      while (@as)
         {
-        _debug(" DDD   looks like ifconfig line 2 on freebsd (inet6)...\n");
-        $sLine = shift @as;
-        } # if
-      if ($sLine =~ m!\bINET\s+($RE{net}{IPv4})\s+NETMASK!i)
-        {
-        my $sIP = $1;
-        _debug(" DDD   looks like ifconfig line 2 on Solaris (ip=$sIP)...\n");
-        # Look ahead and see if "ether" appears on the next line (as darwin):
-        $sLine = shift @as || '';
-        if ($sLine =~ m!ETHER\s+($RE{net}{MAC})\b!i)
+        my $sLine = shift @as;
+        DEBUG_MATCH && print STDERR " DDD output line of cmd ==$sLine==\n";
+        if ($sLine =~ m!\(($RE{net}{IPv4})\)\s+AT\s+($RE{net}{MAC})\b!i)
           {
-          my $sMAC = $1;
-          _debug(" DDD   looks like ifconfig line 3 on darwin (ether=$sMAC)...\n");
-          $hssMACofIP{$sIP} = $sMAC;
+          # Looks like arp on Solaris.
+          my ($sIPFound, $sEtherFound) = ($1, $2);
+          # print STDERR " DDD     found IP =$sIPFound=, found ether =$sEtherFound=\n";
+          return $sEtherFound if ($sIPFound eq $sIP);
+          # print STDERR " DDD     does NOT match the one I wanted =$sIP=\n";
           } # if
-        else
+        if ($sLine =~ m!($RE{net}{IPv4})\s+ETHER\s+($RE{net}{MAC})\b!i)
           {
-          # Put the line back, in case this is not darwin:
-          unshift @as, $sLine;
-          }
-        my $sEther = &canonical($hssMACofIP{$sIP} || '');
-        _debug(" DDD returning $sAdapter-->$sEther ($sIP)\n");
-        push @ahInfo, {
-                       sAdapter => $sAdapter,
-                       sEthernet => $sEther,
-                       sIP => $sIP,
-                       # ifconfig only reports active addresses?
-                       iActive => 1,
-                      };
-	$sMethod = 'ifconfig';
-        } # if
-      } # elsif
-    elsif ($sLine =~ m!\A(.+?)\s.+\s(DE\sHW|HWADDR)\s($RE{net}{MAC})!i)
-      {
-      # Looks like ifconfig on Fedora Core.  Remember this adapter
-      # name for later...
-      my $sAdapter = $1;
-      my $sMAC = $2;
-      _debug(" DDD   looks like ifconfig line 1 on FC6 ($sAdapter,$sMAC)...\n");
-      # Look ahead to the IPv4 on the next line:
-      $sLine = shift @as;
-      if ($sLine =~ m!\sINET\s(ADDR|END\.):($RE{net}{IPv4})\s!i)
-        {
-        my $sIP = $1;
-        _debug(" DDD   looks like ifconfig line 2 on FC6 (ip=$sIP)...\n");
-        push @ahInfo, {
-                       sAdapter => $sAdapter,
-                       sEthernet => &canonical($sMAC),
-                       sIP => $sIP,
-                       # ifconfig only reports active addresses?
-                       iActive => 1,
-                      };
-	$sMethod = 'ifconfig';
-        } # if
-      } # elsif
-    } # while LINE_OF_CMD
-  } # _cmd_output_matches
-
-
-=item method
-
-After a successful call to get_address(), the method() function will
-tell you how the information was derived.  Currently there are three
-possibilities: 'arp' or 'ifconfig' for Unix-like systems, and
-'ipconfig' for Win32.  If you haven't called get_address(), 'N/A' will
-be returned.  If something went wrong during get_address(), 'failed'
-will be returned by method().
-
-=cut
-
-sub method
-  {
-  return $sMethod;
-  } # method
-
+          # Looks like arp on Solaris.
+          return $2 if ($1 eq $sIP);
+          } # if
+        } # while LINE_OF_CMD
+      } # foreach HOSTNAME
+    } # foreach ARP
+  } # _find_mac
 
 =item is_address
 
@@ -475,7 +271,7 @@ Martin Thurn (mthurn@cpan.org).  L<http://www.sandcrawler.com/SWB/cpan-modules.h
 
 __END__
 
-This is an example of @asInfo on MSWin32:
+#### This is an example of @asInfo on MSWin32:
 (
    {
     'sAdapter' => 'Ethernet adapter Local Area Connection',
@@ -497,14 +293,24 @@ This is an example of @asInfo on MSWin32:
    },
 )
 
+#### This is Solaris 8:
+
 > /usr/sbin/arp myhost
 myhost (14.81.16.10) at 03:33:ba:46:f2:ef permanent published
+
+#### This is Solaris 8:
 
 > /usr/sbin/ifconfig -a
 lo0: flags=1000849<UP,LOOPBACK,RUNNING,MULTICAST,IPv4> mtu 8232 index 1
         inet 127.0.0.1 netmask ff000000
 bge0: flags=1000843<UP,BROADCAST,RUNNING,MULTICAST,IPv4> mtu 1500 index 2
         inet 14.81.16.10 netmask ffffff00 broadcast 14.81.16.255
+
+#### This is Fedora Core 6:
+
+$ /sbin/arp
+Address         HWtype  HWaddress           Flags  Mask     Iface
+19.16.11.11     ether   03:53:53:e3:43:93   C               eth0
 
 #### This is amd64-freebsd:
 

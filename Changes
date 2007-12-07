@@ -1,3 +1,7 @@
+2007-12-06    <Daddy@C-3PO>
+
+	* lib/Net/Address/Ethernet.pm: now uses Net::Ifconfig::Wrapper (and works on all my test systems)
+
 2007-11-24    <Daddy@C-3PO>
 
 	* lib/Net/Address/Ethernet.pm (_cmd_output_matches): should now match ifconfig on freebsd
