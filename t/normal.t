@@ -1,6 +1,6 @@
 
 use ExtUtils::testlib;
-use Test::More 'tests' => 24;
+use Test::More 'tests' => 28;
 BEGIN { use_ok('Net::Address::Ethernet', qw( :all ), ) };
 
 my $sOS = $^O;
@@ -21,6 +21,12 @@ diag(qq{FYI, your ethernet address is $s});
 my @a = get_address(0);
 diag(qq{in integer bytes, that's }. join(',', @a));
 is(scalar(@a), 6, 'got 6 bytes');
+my @arh = get_addresses();
+ok(@arh, 'got an array');
+my $rh = shift @arh;
+isa_ok($rh, 'HASH', 'got a hashref');
+ok(is_address($rh->{sEthernet}), 'got an Ethernet address');
+is($rh->{rasIP}->[0], $rh->{sIP}, 'IP matches');
 
 # Low-level tests of basic functionality:
 ok(! is_address(undef));

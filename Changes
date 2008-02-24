@@ -1,3 +1,7 @@
+2008-02-23    <Daddy@C-3PO>
+
+	* lib/Net/Address/Ethernet.pm (get_addresses): now returns multiple IP addresses in rasIP hash entry
+
 2007-12-06    <Daddy@C-3PO>
 
 	* lib/Net/Address/Ethernet.pm: now uses Net::Ifconfig::Wrapper (and works on all my test systems)

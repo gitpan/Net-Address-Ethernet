@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.108 2007/12/07 00:45:01 Daddy Exp $
+# $Id: Ethernet.pm,v 1.109 2008/02/24 00:11:43 Daddy Exp $
 
 =head1 NAME
 
@@ -47,7 +47,7 @@ use constant DEBUG_MATCH => 0;
 
 use vars qw( $DEBUG $VERSION @EXPORT_OK %EXPORT_TAGS );
 use base 'Exporter';
-$VERSION = do { my @r = (q$Revision: 1.108 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.109 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 $DEBUG = 0 || $ENV{N_A_E_DEBUG};
 
@@ -99,7 +99,9 @@ with the following entries filled in to the best of our ability to determine:
 
 =item sEthernet -- The MAC address in canonical form.
 
-=item sIP -- The IP address on this adapter.
+=item rasIP -- A reference to an array of all the IP addresses on this adapter.
+
+=item sIP -- The "first" IP address on this adapter.
 
 =item sAdapter -- The name of this adapter.
 
@@ -112,6 +114,7 @@ For example:
   {
    'sAdapter' => 'Ethernet adapter Local Area Connection',
    'sEthernet' => '12:34:56:78:9A:BC',
+   'rasIP' => ['111.222.33.44',],
    'sIP' => '111.222.33.44',
    'iActive' => 1,
   },
@@ -136,7 +139,8 @@ sub get_addresses
       } # if
     $hash{sAdapter} = $sAdapter;
     my @asIP = keys %{$rh->{$key}->{inet}};
-    $hash{sIP} = shift @asIP;
+    $hash{rasIP} = \@asIP;
+    $hash{sIP} = $asIP[0];
     my $sEther = $rh->{$key}->{ether} || '';
     if ($sEther eq '')
       {
