@@ -4,6 +4,7 @@ author:
 build_requires: 
   Test::More: 0
   Test::Pod: 0
+  Test::Pod::Coverage: 0
 distribution_type: module
 generated_by: Module::Install version 0.68
 license: perl
@@ -23,4 +24,4 @@ requires:
   Regexp::Common: 0
   Sys::Hostname: 0
   perl: 5.004
-version: 1.109
+version: 1.110

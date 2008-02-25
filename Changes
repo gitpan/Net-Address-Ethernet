@@ -1,3 +1,7 @@
+2008-02-24    <Daddy@C-3PO>
+
+	* lib/Net/Address/Ethernet.pm (get_addresses): make sEthernet canonical
+
 2008-02-23    <Daddy@C-3PO>
 
 	* lib/Net/Address/Ethernet.pm (get_addresses): now returns multiple IP addresses in rasIP hash entry

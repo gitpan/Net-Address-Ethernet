@@ -1,6 +1,6 @@
 
 use ExtUtils::testlib;
-use Test::More 'tests' => 28;
+use Test::More 'tests' => 29;
 BEGIN { use_ok('Net::Address::Ethernet', qw( :all ), ) };
 
 my $sOS = $^O;
@@ -25,7 +25,9 @@ my @arh = get_addresses();
 ok(@arh, 'got an array');
 my $rh = shift @arh;
 isa_ok($rh, 'HASH', 'got a hashref');
-ok(is_address($rh->{sEthernet}), 'got an Ethernet address');
+$s = $rh->{sEthernet};
+ok(is_address($s), "got Ethernet address =$s=");
+is($s, canonical($s), 'is canonical');
 is($rh->{rasIP}->[0], $rh->{sIP}, 'IP matches');
 
 # Low-level tests of basic functionality:

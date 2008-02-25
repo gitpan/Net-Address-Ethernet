@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.109 2008/02/24 00:11:43 Daddy Exp $
+# $Id: Ethernet.pm,v 1.110 2008/02/25 03:34:37 Daddy Exp $
 
 =head1 NAME
 
@@ -47,7 +47,7 @@ use constant DEBUG_MATCH => 0;
 
 use vars qw( $DEBUG $VERSION @EXPORT_OK %EXPORT_TAGS );
 use base 'Exporter';
-$VERSION = do { my @r = (q$Revision: 1.109 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.110 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 $DEBUG = 0 || $ENV{N_A_E_DEBUG};
 
@@ -85,7 +85,7 @@ sub get_address
       last TRY_ADDR;
       } # if
     } # foreach TRY_ADDR
-  return wantarray ? map { hex } split(/[-:]/, $sAddr) : &canonical($sAddr);
+  return wantarray ? map { hex } split(/[-:]/, $sAddr) : $sAddr;
   } # get_address
 
 
@@ -146,7 +146,7 @@ sub get_addresses
       {
       $sEther = _find_mac($sAdapter, $hash{sIP});
       } # if
-    $hash{sEthernet} = $sEther;
+    $hash{sEthernet} = canonical($sEther);
     $hash{iActive} = 0;
     if ($rh->{$key}->{status} =~ m!\A(1|UP)\z!)
       {

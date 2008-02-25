@@ -1,4 +1,6 @@
 
+# $Id: Makefile.PL,v 1.9 2008/02/25 03:35:34 Daddy Exp $
+
 use inc::Module::Install;
 
 name('Net-Address-Ethernet');
@@ -15,8 +17,9 @@ requires('Regexp::Common');
 requires('Sys::Hostname');
 build_requires('Test::More');
 build_recommends('Test::Pod');
+build_recommends('Test::Pod::Coverage');
 
-&WriteAll;
+WriteAll();
 
 __END__
 
