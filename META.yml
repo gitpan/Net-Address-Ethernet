@@ -1,27 +1,31 @@
---- 
-author: 
-  - Martin Thurn <mthurn@cpan.org>
-build_requires: 
+---
+abstract: 'find hardware ethernet address'
+author:
+  - 'Martin Thurn (mthurn@cpan.org).  L<http://www.sandcrawler.com/SWB/cpan-modules.html>'
+build_requires:
   Test::More: 0
   Test::Pod: 0
   Test::Pod::Coverage: 0
 distribution_type: module
-generated_by: Module::Install version 0.68
+generated_by: 'Module::Install version 0.76'
 license: perl
-meta-spec: 
-  url: http://module-build.sourceforge.net/META-spec-v1.3.html
-  version: 1.3
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+module_name: Net::Address::Ethernet
 name: Net-Address-Ethernet
-no_index: 
-  directory: 
+no_index:
+  directory:
     - inc
     - t
-recommends: 
+recommends:
   Data::Dumper: 0
-requires: 
+requires:
   Net::Domain: 0
   Net::Ifconfig::Wrapper: 0
   Regexp::Common: 0
   Sys::Hostname: 0
   perl: 5.004
-version: 1.111
+resources:
+  license: http://dev.perl.org/licenses/
+version: 1.113

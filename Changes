@@ -1,6 +1,6 @@
-2008-02-24    <Daddy@C-3PO>
+2008-09-06  Kingpin  <Martin@BLUEMAX>
 
-	* lib/Net/Address/Ethernet.pm (get_addresses): make sEthernet canonical
+	* lib/Net/Address/Ethernet.pm (get_address): removed undef warning
 
 2008-02-23    <Daddy@C-3PO>
 

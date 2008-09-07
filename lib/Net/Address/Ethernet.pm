@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.111 2008/02/26 01:55:17 Daddy Exp $
+# $Id: Ethernet.pm,v 1.113 2008/09/07 03:29:43 Martin Exp $
 
 =head1 NAME
 
@@ -47,7 +47,7 @@ use constant DEBUG_MATCH => 0;
 
 use vars qw( $DEBUG $VERSION @EXPORT_OK %EXPORT_TAGS );
 use base 'Exporter';
-$VERSION = do { my @r = (q$Revision: 1.111 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.113 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 $DEBUG = 0 || $ENV{N_A_E_DEBUG};
 
@@ -80,7 +80,7 @@ sub get_address
     {
     if ($rh->{iActive})
       {
-      next TRY_ADDR if ($rh->{sIP} eq '127.0.0.1');
+      next TRY_ADDR if (($rh->{sIP} || '') eq '127.0.0.1');
       $sAddr = $rh->{sEthernet};
       last TRY_ADDR;
       } # if
@@ -269,6 +269,10 @@ from your system.
 =head1 AUTHOR
 
 Martin Thurn (mthurn@cpan.org).  L<http://www.sandcrawler.com/SWB/cpan-modules.html>
+
+=head1 LICENSE
+
+This software is released under the same license as Perl itself.
 
 =cut
 
