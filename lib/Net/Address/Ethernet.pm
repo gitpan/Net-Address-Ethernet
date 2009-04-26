@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.113 2008/09/07 03:29:43 Martin Exp $
+# $Id: Ethernet.pm,v 1.114 2009/04/26 12:37:03 Martin Exp $
 
 =head1 NAME
 
@@ -42,12 +42,13 @@ use Regexp::Common;
 use Sys::Hostname;
 
 use strict;
+use warnings;
 
 use constant DEBUG_MATCH => 0;
 
 use vars qw( $DEBUG $VERSION @EXPORT_OK %EXPORT_TAGS );
 use base 'Exporter';
-$VERSION = do { my @r = (q$Revision: 1.113 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.114 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 $DEBUG = 0 || $ENV{N_A_E_DEBUG};
 
@@ -80,7 +81,7 @@ sub get_address
     {
     if ($rh->{iActive})
       {
-      next TRY_ADDR if (($rh->{sIP} || '') eq '127.0.0.1');
+      next TRY_ADDR if (($rh->{sIP} || '') eq '127.0.0.1'); # 
       $sAddr = $rh->{sEthernet};
       last TRY_ADDR;
       } # if
