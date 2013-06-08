@@ -1,3 +1,23 @@
+2013-06-08  Kingpin  <martin@localhost.localdomain>
+
+	* updated the Changes file
+
+2013-03-26  Kingpin  <martin@localhost.localdomain>
+
+	* added error message when IfConfig() fails
+
+2013-01-21  Kingpin  <martin@localhost.localdomain>
+
+	* fixed undef warnings
+
+2010-09-09  Kingpin  <martin@localhost.localdomain>
+
+	* deleted old pod
+
+2009-04-26  Kingpin  <martin@localhost.localdomain>
+
+	* use warnings
+
 2008-09-06  Kingpin  <Martin@BLUEMAX>
 
 	* lib/Net/Address/Ethernet.pm (get_address): removed undef warning

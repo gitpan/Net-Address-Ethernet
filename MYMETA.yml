@@ -29,5 +29,5 @@ requires:
   Sys::Hostname: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 1.116
+version: 1.117
 x_module_name: Net::Address::Ethernet
