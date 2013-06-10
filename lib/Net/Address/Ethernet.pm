@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.118 2013/06/08 14:04:25 martin Exp $
+# $Id: Ethernet.pm,v 1.119 2013/06/10 16:54:09 martin Exp $
 
 =head1 NAME
 
@@ -37,7 +37,7 @@ use constant DEBUG_MATCH => 0;
 
 use vars qw( $DEBUG $VERSION @EXPORT_OK %EXPORT_TAGS );
 use base 'Exporter';
-$VERSION = do { my @r = (q$Revision: 1.118 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.119 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 $DEBUG = 0 || $ENV{N_A_E_DEBUG};
 
@@ -55,11 +55,14 @@ When called in array context, returns a 6-element list representing
 the 6 bytes of the address in decimal.  For example,
 (26,43,60,77,94,111).
 
+If any non-zero argument is given,
+debugging information will be printed to STDERR.
+
 =cut
 
 sub get_address
   {
-  my @a = get_addresses();
+  my @a = get_addresses(@_);
   _debug(" DDD in get_address, a is ", Dumper(\@a));
   # Even if none are active, we'll return the first one:
   my $sAddr = $a[0]->{sEthernet};
@@ -108,16 +111,24 @@ For example:
    'iActive' => 1,
   },
 
+If any non-zero argument is given,
+debugging information will be printed to STDERR.
+
 =cut
 
 sub get_addresses
   {
-  goto ALL_DONE if @ahInfo;
+  $DEBUG ||= shift;
+  # Short-circuit if this function has already been called:
+  if (! $DEBUG && @ahInfo)
+    {
+    goto ALL_DONE;
+    } # if
   my $sAddr = undef;
   my $rh = Ifconfig('list', '', '', '');
   if (! defined $rh || (! scalar keys %$rh))
     {
-    warn " EEE ifconfig failed: $@";
+    warn " EEE Ifconfig failed: $@";
     } # if
   _debug(" DDD raw output from Ifconfig is ", Dumper($rh));
   # Convert their hashref to our array format:

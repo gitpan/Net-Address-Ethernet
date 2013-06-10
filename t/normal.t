@@ -8,7 +8,7 @@ my $s = get_address;
 ok(defined($s), 'defined');
 isnt($s, '', 'not empty');
 my $iIsAnAddress = ok(is_address($s), 'looks like an address');
-if (0 && ! $iIsAnAddress)
+if (! $iIsAnAddress)
   {
   # I'd like to repeat the test with debugging turned on, to see what
   # it's trying to parse.  (Unfortunately, the module caches its
