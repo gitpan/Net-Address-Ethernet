@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.119 2013/06/10 16:54:09 martin Exp $
+# $Id: Ethernet.pm,v 1.121 2013/06/17 21:25:46 martin Exp $
 
 =head1 NAME
 
@@ -37,7 +37,7 @@ use constant DEBUG_MATCH => 0;
 
 use vars qw( $DEBUG $VERSION @EXPORT_OK %EXPORT_TAGS );
 use base 'Exporter';
-$VERSION = do { my @r = (q$Revision: 1.119 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.121 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 $DEBUG = 0 || $ENV{N_A_E_DEBUG};
 
@@ -66,16 +66,42 @@ sub get_address
   _debug(" DDD in get_address, a is ", Dumper(\@a));
   # Even if none are active, we'll return the first one:
   my $sAddr = $a[0]->{sEthernet};
-  # Look through the list, returning the first active one:
+  # Look through the list, returning the first active one that has a
+  # non-loopback IP address assigned to it:
  TRY_ADDR:
   foreach my $rh (@a)
     {
-    if ($rh->{iActive})
+    my $sName = $rh->{sAdapter};
+    _debug(" DDD inspecting interface $sName...\n");
+    if (! $rh->{iActive})
       {
-      next TRY_ADDR if (($rh->{sIP} || '') eq '127.0.0.1'); # 
-      $sAddr = $rh->{sEthernet};
-      last TRY_ADDR;
+      _debug(" DDD   but it is not active.\n");
+      next TRY_ADDR;
       } # if
+    _debug(" DDD   it is active...\n");
+    if (! exists $rh->{sIP})
+      {
+      _debug(" DDD   but it has no IP address.\n");
+      next TRY_ADDR;
+      } # if
+    if (! defined $rh->{sIP})
+      {
+      _debug(" DDD   but its IP address is undefined.\n");
+      next TRY_ADDR;
+      } # if
+    if ($rh->{sIP} eq '')
+      {
+      _debug(" DDD   but its IP address is empty.\n");
+      next TRY_ADDR;
+      } # if
+    if ($rh->{sIP} eq '127.0.0.1')
+      {
+      _debug(" DDD   but it's the loopback.\n");
+      next TRY_ADDR;
+      } # if
+    $sAddr = $rh->{sEthernet};
+    _debug(" DDD   and its address is $sAddr.\n");
+    last TRY_ADDR;
     } # foreach TRY_ADDR
   return wantarray ? map { hex } split(/[-:]/, $sAddr) : $sAddr;
   } # get_address
@@ -153,7 +179,7 @@ sub get_addresses
       } # if
     $hash{sEthernet} = canonical($sEther);
     $hash{iActive} = 0;
-    if (defined $rh->{$key}->{status} && ($rh->{$key}->{status} =~ m!\A(1|UP)\z!))
+    if (defined $rh->{$key}->{status} && ($rh->{$key}->{status} =~ m!\A(1|UP)\z!i))
       {
       $hash{iActive} = 1;
       } # if
@@ -285,7 +311,9 @@ This software is released under the same license as Perl itself.
 
 __END__
 
-#### This is an example of @asInfo on MSWin32:
+=pod
+
+#### This is an example of @ahInfo on MSWin32:
 (
    {
     'sAdapter' => 'Ethernet adapter Local Area Connection',
@@ -300,7 +328,8 @@ __END__
     'iActive' => 1,
    },
    {
-    'sAdapter' => 'PPP adapter Verizon Online',
+    'sAdapter' => '{gobbledy-gook}',
+    'sDesc' => 'PPP adapter Verizon Online',
     'sEthernet' => '00-53-45-00-00-00',
     'sIP' => '71.24.23.85',
     'iActive' => 1,

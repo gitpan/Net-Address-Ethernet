@@ -51,6 +51,6 @@
          "http://dev.perl.org/licenses/"
       ]
    },
-   "version" : "1.118",
+   "version" : "1.119",
    "x_module_name" : "Net::Address::Ethernet"
 }
