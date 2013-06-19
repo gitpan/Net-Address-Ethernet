@@ -1,5 +1,5 @@
 
-# $Id: Ethernet.pm,v 1.121 2013/06/17 21:25:46 martin Exp $
+# $Id: Ethernet.pm,v 1.122 2013/06/19 22:15:26 martin Exp $
 
 =head1 NAME
 
@@ -37,7 +37,7 @@ use constant DEBUG_MATCH => 0;
 
 use vars qw( $DEBUG $VERSION @EXPORT_OK %EXPORT_TAGS );
 use base 'Exporter';
-$VERSION = do { my @r = (q$Revision: 1.121 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.122 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 $DEBUG = 0 || $ENV{N_A_E_DEBUG};
 
@@ -99,8 +99,23 @@ sub get_address
       _debug(" DDD   but it's the loopback.\n");
       next TRY_ADDR;
       } # if
+    if (! exists $rh->{sEthernet})
+      {
+      _debug(" DDD   but it has no ethernet address.\n");
+      next TRY_ADDR;
+      } # if
+    if (! defined $rh->{sEthernet})
+      {
+      _debug(" DDD   but its ethernet address is undefined.\n");
+      next TRY_ADDR;
+      } # if
+    if ($rh->{sEthernet} eq q{})
+      {
+      _debug(" DDD   but its ethernet address is empty.\n");
+      next TRY_ADDR;
+      } # if
     $sAddr = $rh->{sEthernet};
-    _debug(" DDD   and its address is $sAddr.\n");
+    _debug(" DDD   and its ethernet address is $sAddr.\n");
     last TRY_ADDR;
     } # foreach TRY_ADDR
   return wantarray ? map { hex } split(/[-:]/, $sAddr) : $sAddr;
